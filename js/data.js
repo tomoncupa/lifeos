@@ -528,13 +528,69 @@ function loadState() {
   state.weightLog.sort((a,b) => a.date < b.date ? -1 : 1);
 }
 
-function saveState() {
+// ── DEBOUNCED SAVE (prevents blocking main thread on rapid taps) ──
+let _saveTimer = null;
+let _saveImmediate = false;
+
+function saveState(immediate = false) {
+  state._dirty = true;
+  updateSyncDot('pending');
+
+  if (immediate) {
+    _doSave();
+    return;
+  }
+
+  // Debounce: coalesce rapid saves into one write 800ms after last call
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(_doSave, 800);
+}
+
+function _doSave() {
   try {
     localStorage.setItem('systemos_v2', JSON.stringify(state));
     state._dirty = false;
     updateSyncDot('synced');
-  } catch(e) { console.warn('Save error', e); }
+  } catch(e) {
+    console.warn('Save error', e);
+    updateSyncDot('offline');
+  }
 }
+
+// Force immediate save on page unload so no data is lost
+window.addEventListener('beforeunload', () => {
+  if (state._dirty) _doSave();
+});
+window.addEventListener('pagehide', () => {
+  if (state._dirty) _doSave();
+});
+
+// ── CACHED rankColor (avoid getComputedStyle on every render) ──
+let _rankColorCache = null;
+let _rankColorTheme = null;
+
+function rankColor(r) {
+  const theme = document.documentElement.dataset.theme;
+  if (_rankColorTheme !== theme) {
+    // Rebuild cache on theme change
+    const cs = getComputedStyle(document.documentElement);
+    _rankColorCache = {
+      S: cs.getPropertyValue('--rank-s').trim(),
+      A: cs.getPropertyValue('--rank-a').trim(),
+      B: cs.getPropertyValue('--rank-b').trim(),
+      C: cs.getPropertyValue('--rank-c').trim(),
+      D: cs.getPropertyValue('--rank-d').trim(),
+      E: cs.getPropertyValue('--rank-e').trim(),
+      F: cs.getPropertyValue('--rank-f').trim(),
+      none: cs.getPropertyValue('--rank-none').trim() || '#212322',
+    };
+    _rankColorTheme = theme;
+  }
+  return _rankColorCache[r] || _rankColorCache.none;
+}
+
+// Invalidate cache on theme change
+function invalidateRankCache() { _rankColorTheme = null; }
 
 function deepMerge(target, source) {
   const out = { ...target };

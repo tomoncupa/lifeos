@@ -14,13 +14,15 @@ let alarmDismissed = { morning: false, evening: false };
 const SECTIONS = ['daily','quests','training','nutrition','journal','settings'];
 
 function switchSection(name) {
+  if (name === currentSection) return; // already here — no work
   currentSection = name;
   SECTIONS.forEach(s => {
     document.getElementById('section-' + s)?.classList.toggle('active', s === name);
     document.querySelector(`[data-nav="${s}"]`)?.classList.toggle('active', s === name);
   });
-  renderSection(name);
   SoundEngine.tap();
+  // Defer heavy renders to next frame so nav animation feels instant
+  requestAnimationFrame(() => renderSection(name));
 }
 
 function renderSection(name) {
@@ -29,7 +31,15 @@ function renderSection(name) {
     case 'quests':    renderQuests(); break;
     case 'training':  renderTraining(); break;
     case 'nutrition': renderNutrition(); break;
-    case 'journal':   renderJournal(); break;
+    case 'journal':
+      renderJournalEntries();
+      // Charts are expensive — defer to after paint
+      requestAnimationFrame(() => {
+        Charts.drawWeightChart('weight-chart-canvas', currentChartPeriod);
+        renderWeightStats();
+        renderCaloriesChart();
+      });
+      break;
     case 'settings':  renderSettings(); break;
   }
 }
@@ -200,9 +210,29 @@ function toggleCoreQuest(key) {
   } else {
     SoundEngine.questUndo();
   }
-  saveState();
-  renderDaily();
+  saveState(); // debounced — no block
+  // Targeted update: just toggle this item's visual state
+  const idMap = { sleep:'sq-sleep', trained:'sq-trained', mainQuest:'sq-mainquest' };
+  setCoreQuest(idMap[key] || 'sq-' + key, done, false);
+  // Update progress bar and rank chip only
+  updateDailyProgress(day);
   checkRankCelebration(day);
+}
+
+// Lightweight progress-only update (no full DOM rebuild)
+function updateDailyProgress(day) {
+  const s = state.settings;
+  const cq = day.coreQuests;
+  const coreGoals = [cq.sleep, cq.steps >= s.stepsGoal, cq.calories > 0 && cq.calories <= s.caloriesGoal, cq.protein >= s.proteinGoal, cq.trained, cq.mainQuest];
+  const coreDone = coreGoals.filter(Boolean).length;
+  const customDone = (day.customQuests||[]).filter(c=>c.done).length;
+  const customTotal = (day.customQuests||[]).length;
+  const totalDone = coreDone + customDone;
+  const totalQuests = 6 + customTotal;
+  const pct = Math.round((totalDone / totalQuests) * 100);
+  setStyle('daily-progress-fill', 'width', pct + '%');
+  setText('daily-completion-text', `${totalDone} / ${totalQuests} DAILY QUESTS`);
+  updateTopbar();
 }
 
 function stepperChange(key, dir, step) {
@@ -216,7 +246,8 @@ function stepperChange(key, dir, step) {
   } else {
     SoundEngine.tap();
   }
-  saveState();
+  saveState(); // debounced — safe for rapid taps
+  // Targeted update only — no full re-render
   setCoreQuestStepper('sq-steps', day.coreQuests.steps, state.settings.stepsGoal, 'steps');
   updateTopbar();
   checkRankCelebration(day);
@@ -1165,7 +1196,10 @@ function adjustSupp(type, dir) {
   const day = getDay(todayKey());
   const steps = { caffeine: 25, creatine: 5 };
   day.nutrition[type] = Math.max(0, (day.nutrition[type]||0) + dir * steps[type]);
-  saveState(); renderNutrition(); SoundEngine.tap();
+  saveState(); // debounced
+  // Targeted: only update the changed value display
+  setText('supp-' + type, day.nutrition[type]);
+  SoundEngine.tap();
 }
 
 // ============================================================
@@ -1354,7 +1388,8 @@ function renderSettings() {
 function applyTheme(id) {
   state.settings.theme = id;
   document.documentElement.dataset.theme = id;
-  saveState();
+  if (typeof invalidateRankCache === 'function') invalidateRankCache();
+  saveState(true); // immediate — settings changes should persist fast
   renderSettings();
   SoundEngine.tap();
 }

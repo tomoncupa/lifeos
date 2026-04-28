@@ -5,6 +5,8 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { height: 100%; overflow: hidden; touch-action: manipulation; }
+button, a, [onclick] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+input, select, textarea { touch-action: manipulation; }
 
 body {
   font-family: var(--font-ui);
@@ -573,3 +575,20 @@ body.desktop-mode #desktop-os { display: flex; }
 
 /* Empty state RPG language */
 .todo-section:empty::after { content:'Board clear — no quests logged, Player.'; display:block; padding:12px; font-family:var(--font-mono); font-size:9px; color:var(--text-muted); text-align:center; }
+
+/* ── PERFORMANCE HINTS ── */
+/* Promote animated elements to their own GPU layer */
+.quest-item, .todo-item { will-change: transform; contain: layout style; }
+.section { contain: layout style; }
+#main-content { contain: layout; }
+.bottom-nav { will-change: transform; }
+
+/* Prevent layout thrash from transitions on rapid taps */
+.q-check { transition: background 0.15s, border-color 0.15s, color 0.15s; }
+
+/* Touch feedback — instant, no delay */
+.quest-item:active, .todo-item:active, .nav-item:active { transform: scale(0.98); }
+.step-btn:active, .supp-btn:active { transform: scale(0.92); }
+
+/* Remove transition: all — specific transitions only */
+.todo-item { transition: opacity 0.18s, border-color 0.18s; }
