@@ -14,14 +14,14 @@ let alarmDismissed = { morning: false, evening: false };
 const SECTIONS = ['daily','quests','training','nutrition','journal','settings'];
 
 function switchSection(name) {
-  if (name === currentSection) return; // already here — no work
+  const isFirstRender = !document.getElementById('app')?.classList.contains('visible');
+  if (name === currentSection && !isFirstRender) return; // skip re-render if already here
   currentSection = name;
   SECTIONS.forEach(s => {
     document.getElementById('section-' + s)?.classList.toggle('active', s === name);
     document.querySelector(`[data-nav="${s}"]`)?.classList.toggle('active', s === name);
   });
   SoundEngine.tap();
-  // Defer heavy renders to next frame so nav animation feels instant
   requestAnimationFrame(() => renderSection(name));
 }
 
