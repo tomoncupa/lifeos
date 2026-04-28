@@ -420,119 +420,339 @@ function checkStreak() {
 // ============================================================
 let pendingNLP = null;
 
+// ── NLP PARSE DISPLAY ──
 function handleQuestInput(val) {
   const parsed = parseNLP(val);
   pendingNLP = parsed;
   const hint = document.getElementById('nlp-hint');
   if (!hint) return;
   const parts = [];
-  if (parsed.due && parsed.label) parts.push(`📅 ${parsed.label}`);
-  if (parsed.recurring) parts.push(`🔁 ${parsed.recurring}`);
-  if (parsed.priority < 4) parts.push(`P${parsed.priority}`);
-  if (parsed.tags.length) parts.push(parsed.tags.map(t=>`@${t}`).join(' '));
-  if (parsed.quests.length) parts.push(parsed.quests.map(q=>`#${q}`).join(' '));
-  if (parts.length) {
-    hint.textContent = parts.join(' · ');
-    hint.style.display = 'block';
-  } else {
-    hint.style.display = 'none';
-  }
+  if (parsed.due && parsed.label) parts.push('📅 ' + parsed.label);
+  if (parsed.recurring) parts.push('🔁 ' + parsed.recurring);
+  if (parsed.priority < 4) parts.push(priorityLabel(parsed.priority));
+  if (parsed.tags.length) parts.push(parsed.tags.map(t=>'@'+t).join(' '));
+  hint.textContent = parts.length ? parts.join(' · ') : '';
+  hint.style.display = parts.length ? 'block' : 'none';
 }
 
-function addQuest(cat) {
+function priorityLabel(p) {
+  return ['','⚡ LEGENDARY','🔴 EPIC','🔵 RARE',''][p] || '';
+}
+
+// ── ADD QUEST ──
+function addQuest(projectId) {
   const inp = document.getElementById('quest-input');
   if (!inp) return;
   const raw = inp.value.trim();
   if (!raw) return;
   const parsed = pendingNLP || parseNLP(raw);
-  const title = parsed.clean || raw;
-  state.quests.push({
-    id: Date.now() + Math.random(),
-    title, category: cat || currentQuestCat,
-    due: parsed.due, recurring: parsed.recurring,
+  const content = parsed.clean || raw;
+  const pid = projectId || currentProject || 'inbox';
+  const q = freshQuest({
+    content, projectId: pid,
     priority: parsed.priority || 4,
-    tags: parsed.tags || [], questTags: parsed.quests || [],
-    done: false, frozen: false, dueCompleted: null,
-    created: todayKey(), subquests: []
+    labels: parsed.tags || [],
+    due: parsed.due, dueString: parsed.label || '',
+    recurring: parsed.recurring || null,
+    dueIsRecurring: !!parsed.recurring,
+    itemOrder: state.quests.length,
   });
+  state.quests.push(q);
+  awardKarma(1, 'added');
   saveState();
   inp.value = '';
   pendingNLP = null;
-  document.getElementById('nlp-hint').style.display = 'none';
+  const hint = document.getElementById('nlp-hint');
+  if (hint) hint.style.display = 'none';
   SoundEngine.save();
   renderQuests();
 }
 
+// ── STATE ──
+let currentProject = 'inbox';
+let currentFilter = null;
+let showCompleted = false;
+
+// ── RENDER QUEST LOG ──
 function renderQuests() {
-  ['main','today','side'].forEach(cat => {
-    const container = document.getElementById('quest-list-' + cat);
-    if (!container) return;
-    const items = state.quests.filter(q => q.category === cat);
-    container.innerHTML = '';
-    if (!items.length) {
-      container.innerHTML = `<div style="padding:10px 0;font-family:var(--font-mono);font-size:9px;color:var(--text-muted);text-align:center;">NONE</div>`;
-      return;
-    }
-    items.forEach(q => {
-      const realIdx = state.quests.indexOf(q);
+  renderProjectList();
+  renderQuestItems();
+  renderKarmaBar();
+}
+
+function renderProjectList() {
+  const container = document.getElementById('project-list');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const views = [
+    { id: 'today',    label: '⚔ Today',    query: 'today' },
+    { id: 'upcoming', label: '📅 Upcoming', query: 'next 7 days' },
+    { id: 'overdue',  label: '🔴 Overdue',  query: 'overdue' },
+  ];
+
+  views.forEach(v => {
+    const count = getQuestsForFilter(v.query).length;
+    const el = document.createElement('div');
+    el.className = 'project-row' + (currentProject === v.id ? ' active' : '');
+    el.innerHTML = '<span class="project-row-name">' + v.label + '</span>' + (count ? '<span class="project-count">' + count + '</span>' : '');
+    el.onclick = () => { currentProject = v.id; currentFilter = v.query; document.querySelectorAll('.project-row').forEach(r=>r.classList.remove('active')); el.classList.add('active'); renderQuestItems(); SoundEngine.tap(); };
+    container.appendChild(el);
+  });
+
+  const sep = document.createElement('div');
+  sep.style.cssText = 'height:1px;background:var(--border);margin:5px 0;';
+  container.appendChild(sep);
+
+  state.projects.forEach(proj => {
+    const count = state.quests.filter(q=>q.projectId===proj.id&&!q.checked).length;
+    const el = document.createElement('div');
+    el.className = 'project-row' + (currentProject === proj.id && !currentFilter ? ' active' : '');
+    el.innerHTML = '<span class="project-dot" style="background:' + proj.color + '"></span><span class="project-row-name">' + escHtml(proj.name) + '</span>' + (count ? '<span class="project-count">' + count + '</span>' : '');
+    el.onclick = () => { currentProject = proj.id; currentFilter = null; document.querySelectorAll('.project-row').forEach(r=>r.classList.remove('active')); el.classList.add('active'); renderQuestItems(); SoundEngine.tap(); };
+    el.oncontextmenu = e => { e.preventDefault(); const name = prompt('Quest Board name:', proj.name); if (name) { proj.name = name; saveState(); renderQuests(); } };
+    container.appendChild(el);
+  });
+
+  if (state.filters.length) {
+    const fsep = document.createElement('div');
+    fsep.style.cssText = 'height:1px;background:var(--border);margin:5px 0;';
+    container.appendChild(fsep);
+    state.filters.forEach(f => {
       const el = document.createElement('div');
-      el.className = 'todo-item' + (q.done?' done':'') + (q.frozen?' frozen':'');
-      const overdue = q.due && isOverdue(q.due) && !q.done;
-      const pc = ['','p1-color','p2-color','p3-color','p4-color'][q.priority||4] || '';
-      el.innerHTML = `
-        <div class="todo-chk" onclick="toggleQuest(${realIdx})">${q.done?'✓':''}</div>
-        <div class="todo-body" onclick="toggleQuest(${realIdx})">
-          <div class="todo-title">${escHtml(q.title)}</div>
-          <div class="todo-meta">
-            ${q.due?`<span class="todo-due${overdue?' overdue':''}">📅 ${formatDate(q.due)}${overdue?' OVERDUE':''}</span>`:''}
-            ${q.priority<4?`<span class="todo-priority ${pc}">P${q.priority}</span>`:''}
-            ${(q.tags||[]).map(t=>`<span class="todo-tag">@${escHtml(t)}</span>`).join('')}
-            ${q.recurring?`<span style="font-family:var(--font-mono);font-size:8px;color:var(--secondary)">🔁 ${q.recurring}</span>`:''}
-          </div>
-          ${(q.subquests||[]).length?`<div style="margin-top:5px;font-family:var(--font-mono);font-size:8px;color:var(--text-muted);">${q.subquests.filter(s=>s.done).length}/${q.subquests.length} sub-quests</div>`:''}
-        </div>
-        <div class="todo-actions">
-          ${q.frozen?'❄':''}
-          <button class="todo-action-btn" onclick="event.stopPropagation();freezeQuest(${realIdx})">⏸</button>
-          <button class="todo-action-btn" onclick="event.stopPropagation();deleteQuest(${realIdx})">×</button>
-        </div>`;
+      el.className = 'project-row';
+      el.innerHTML = '<span style="font-size:11px;">🔍</span><span class="project-row-name">' + escHtml(f.name) + '</span>';
+      el.onclick = () => { currentProject = '__filter__'; currentFilter = f.queryStr; renderQuestItems(); SoundEngine.tap(); };
       container.appendChild(el);
     });
-    // Count
-    const cnt = document.getElementById('qc-' + cat);
-    if (cnt) cnt.textContent = items.filter(q=>!q.done).length;
-  });
+  }
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'project-add-btn';
+  addBtn.textContent = '+ New Quest Board';
+  addBtn.onclick = () => openModal('project-modal');
+  container.appendChild(addBtn);
 }
 
-function toggleQuest(i) {
-  const q = state.quests[i];
+function renderQuestItems() {
+  const container = document.getElementById('quest-items');
+  if (!container) return;
+  container.innerHTML = '';
+
+  let quests;
+  if (currentFilter) {
+    quests = getQuestsForFilter(currentFilter);
+  } else {
+    quests = state.quests.filter(q => q.projectId === currentProject && !q.parentId);
+  }
+
+  quests = quests.sort((a,b) => {
+    if (a.priority !== b.priority) return a.priority - b.priority;
+    return a.itemOrder - b.itemOrder;
+  });
+
+  const active = quests.filter(q => !q.checked);
+  const done = quests.filter(q => q.checked);
+
+  if (!active.length && !showCompleted && !done.length) {
+    container.innerHTML = '<div class="quest-empty-state"><div class="quest-empty-icon">⚔</div><div class="quest-empty-title">Board Clear</div><div class="quest-empty-sub">No active quests, Player. What's the next objective?</div></div>';
+    return;
+  }
+
+  active.forEach(q => container.appendChild(buildQuestRow(q)));
+
+  if (done.length) {
+    const toggleEl = document.createElement('div');
+    toggleEl.className = 'completed-toggle';
+    toggleEl.innerHTML = (showCompleted ? '▾' : '▸') + ' Completed (' + done.length + ')';
+    toggleEl.onclick = () => { showCompleted = !showCompleted; renderQuestItems(); };
+    container.appendChild(toggleEl);
+    if (showCompleted) done.forEach(q => container.appendChild(buildQuestRow(q)));
+  }
+}
+
+function buildQuestRow(q) {
+  const el = document.createElement('div');
+  const overdue = q.due && isOverdue(q.due) && !q.checked;
+  const PRIO_COLORS = ['','#f0b323','#ef4444','#3b82f6',''];
+  const PRIO_LABELS = ['','LEGENDARY','EPIC','RARE',''];
+  const subDone = (q.subQuests||[]).filter(sid => state.quests.find(x=>x.id===sid)?.checked).length;
+  const subTotal = (q.subQuests||[]).length;
+
+  el.className = 'todo-item' + (q.checked?' done':'') + (q.frozen?' frozen':'');
+  el.draggable = true;
+  el.dataset.questId = q.id;
+
+  el.innerHTML =
+    '<div class="todo-chk" onclick="toggleQuest('' + q.id + '')" style="border-color:' + (PRIO_COLORS[q.priority]||'var(--border)') + '">' + (q.checked?'✓':'') + '</div>' +
+    '<div class="todo-body" onclick="openQuestDetail('' + q.id + '')">' +
+      '<div class="todo-title">' + escHtml(q.content) + (q.description ? '<span style="margin-left:5px;font-size:10px;color:var(--text-muted);">📝</span>' : '') + '</div>' +
+      '<div class="todo-meta">' +
+        (q.due ? '<span class="todo-due' + (overdue?' overdue':'') + '">' + (overdue?'🔴 ':'') + formatDate(q.due) + '</span>' : '') +
+        (q.priority < 4 ? '<span class="todo-priority" style="color:' + PRIO_COLORS[q.priority] + '">' + PRIO_LABELS[q.priority] + '</span>' : '') +
+        (q.labels||[]).map(t=>'<span class="todo-tag">@' + escHtml(t) + '</span>').join('') +
+        (q.dueIsRecurring ? '<span style="color:var(--secondary);font-family:var(--font-mono);font-size:8px;">🔁</span>' : '') +
+        (q.notes?.length ? '<span style="color:var(--text-muted);font-family:var(--font-mono);font-size:8px;">💬' + q.notes.length + '</span>' : '') +
+        (subTotal ? '<span style="color:var(--text-muted);font-family:var(--font-mono);font-size:8px;">' + subDone + '/' + subTotal + '</span>' : '') +
+      '</div>' +
+    '</div>' +
+    '<div class="todo-actions">' +
+      '<button class="todo-action-btn" onclick="event.stopPropagation();toggleFreeze('' + q.id + '')">' + (q.frozen?'❄':'⏸') + '</button>' +
+      '<button class="todo-action-btn" onclick="event.stopPropagation();deleteQuestById('' + q.id + '')">×</button>' +
+    '</div>';
+
+  el.addEventListener('dragstart', e => { e.dataTransfer.setData('questId', q.id); el.style.opacity='0.4'; });
+  el.addEventListener('dragend', () => el.style.opacity='1');
+  el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drag-over'); });
+  el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+  el.addEventListener('drop', e => { e.preventDefault(); el.classList.remove('drag-over'); const did = e.dataTransfer.getData('questId'); reorderQuest(did, q.id); });
+  return el;
+}
+
+function reorderQuest(draggedId, targetId) {
+  const qi = state.quests.findIndex(q=>q.id===draggedId);
+  const ti = state.quests.findIndex(q=>q.id===targetId);
+  if (qi<0||ti<0) return;
+  const [moved] = state.quests.splice(qi,1);
+  state.quests.splice(ti,0,moved);
+  state.quests.forEach((q,i)=>q.itemOrder=i);
+  saveState(); renderQuestItems();
+}
+
+function renderKarmaBar() {
+  const bar = document.getElementById('karma-bar');
+  if (!bar) return;
+  const karma = calculateKarma();
+  const lvl = karma.level;
+  const next = karma.nextLevel;
+  const pts = state.karma?.points || 0;
+  const pct = next.minPoints > lvl.minPoints ? Math.min(100,((pts-lvl.minPoints)/(next.minPoints-lvl.minPoints))*100) : 100;
+  bar.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;"><span style="font-family:var(--font-display);font-size:10px;color:var(--gold-bright);letter-spacing:0.1em;">' + lvl.name.toUpperCase() + '</span><span style="font-family:var(--font-mono);font-size:8px;color:var(--text-muted);">' + pts + ' pts · ' + karma.completedToday + '/' + (state.settings.dailyQuestGoal||5) + ' today</span></div><div class="karma-track"><div class="karma-fill" style="width:' + pct + '%"></div></div>';
+}
+
+function toggleQuest(id) {
+  const q = state.quests.find(x=>x.id===id);
   if (!q || q.frozen) return;
-  q.done = !q.done;
-  if (q.done) {
-    q.dueCompleted = todayKey();
+  q.checked = !q.checked;
+  if (q.checked) {
+    q.completedAt = todayKey();
     SoundEngine.questComplete();
     spawnParticles('✦', 3);
+    awardKarma(5, 'complete');
     processRecurringTasks();
-  } else {
-    SoundEngine.questUndo();
-  }
+    const karma = calculateKarma();
+    if (karma.completedToday === (state.settings.dailyQuestGoal||5)) { setTimeout(()=>{spawnParticles('⭐',6);SoundEngine.streakMilestone();},400); }
+  } else { q.completedAt = null; SoundEngine.questUndo(); }
   saveState(); renderQuests();
 }
 
-function freezeQuest(i) {
-  state.quests[i].frozen = !state.quests[i].frozen;
-  saveState(); renderQuests(); SoundEngine.tap();
+function toggleFreeze(id) {
+  const q = state.quests.find(x=>x.id===id);
+  if (!q) return;
+  q.frozen = !q.frozen;
+  saveState(); renderQuestItems(); SoundEngine.tap();
 }
 
-function deleteQuest(i) {
-  state.quests.splice(i, 1);
-  saveState(); renderQuests();
+function deleteQuestById(id) {
+  const i = state.quests.findIndex(x=>x.id===id);
+  if (i>=0) state.quests.splice(i,1);
+  saveState(); renderQuestItems();
+}
+
+function openQuestDetail(id) {
+  const q = state.quests.find(x=>x.id===id);
+  if (!q) return;
+  const modal = document.getElementById('quest-detail-modal');
+  if (!modal) return;
+  const PRIO = ['','⚡ Legendary','🔴 Epic','🔵 Rare','⬜ Common'];
+  const projectOpts = state.projects.map(p=>'<option value="'+p.id+'" '+(q.projectId===p.id?'selected':'')+'>'+escHtml(p.name)+'</option>').join('');
+  modal.querySelector('.modal-sheet').innerHTML =
+    '<div class="modal-grip"></div>' +
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
+      '<div onclick="toggleQuest(''+q.id+'');openQuestDetail(''+q.id+'')" style="width:28px;height:28px;border-radius:7px;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;">'+(q.checked?'✓':'')+'</div>' +
+      '<input id="qd-content" style="flex:1;background:none;border:none;color:var(--text-primary);font-family:var(--font-ui);font-size:17px;font-weight:600;outline:none;" value="'+escHtml(q.content)+'" onchange="updateQuest(''+q.id+'','content',this.value)" />' +
+    '</div>' +
+    '<textarea id="qd-desc" style="width:100%;background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;padding:9px;color:var(--text-secondary);font-family:var(--font-ui);font-size:13px;resize:none;outline:none;margin-bottom:10px;min-height:56px;" placeholder="Notes..." onchange="updateQuest(''+q.id+'','description',this.value)">'+escHtml(q.description||'')+'</textarea>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px;">' +
+      '<div><div class="f-label">DUE</div><input type="date" class="settings-inp" style="width:100%;text-align:left;" value="'+(q.due||'')+'" onchange="updateQuest(''+q.id+'','due',this.value)" /></div>' +
+      '<div><div class="f-label">PRIORITY</div><select class="settings-inp" style="width:100%;" onchange="updateQuest(''+q.id+'','priority',parseInt(this.value))">'+[1,2,3,4].map(p=>'<option value="'+p+'" '+(q.priority===p?'selected':'')+'>'+PRIO[p]+'</option>').join('')+'</select></div>' +
+      '<div><div class="f-label">BOARD</div><select class="settings-inp" style="width:100%;" onchange="updateQuest(''+q.id+'','projectId',this.value)">'+projectOpts+'</select></div>' +
+      '<div><div class="f-label">LABELS</div><input class="settings-inp" style="width:100%;text-align:left;" value="'+(q.labels?.length?'@'+q.labels.join(' @'):'')+'" placeholder="@health" onchange="updateQuest(''+q.id+'','labels',this.value.split(/\s+/).filter(t=>t.startsWith('@')).map(t=>t.slice(1)))" /></div>' +
+    '</div>' +
+    '<div class="f-label">SUB-QUESTS</div><div id="qd-subs" style="margin-bottom:6px;">'+buildSubQuestList(q)+'</div>' +
+    '<div style="display:flex;gap:6px;margin-bottom:12px;"><input id="qd-sub-inp" class="f-input" type="text" placeholder="Add sub-quest..." style="margin-bottom:0;flex:1;" onkeydown="if(event.key==='Enter')addSubQuest(''+q.id+'')" /><button class="quest-add-btn" onclick="addSubQuest(''+q.id+'')">+</button></div>' +
+    '<div class="f-label">NOTES</div><div id="qd-notes" style="margin-bottom:6px;">'+buildNotesList(q)+'</div>' +
+    '<div style="display:flex;gap:6px;margin-bottom:14px;"><input id="qd-note-inp" class="f-input" type="text" placeholder="Add note..." style="margin-bottom:0;flex:1;" onkeydown="if(event.key==='Enter')addQuestNote(''+q.id+'')" /><button class="quest-add-btn" onclick="addQuestNote(''+q.id+'')">+</button></div>' +
+    '<button class="m-btn" onclick="closeModal('quest-detail-modal')">DONE</button>' +
+    '<button class="m-btn m-btn-sec" style="color:var(--danger);border-color:var(--danger);" onclick="deleteQuestById(''+q.id+'');closeModal('quest-detail-modal')">DELETE QUEST</button>';
+  openModal('quest-detail-modal');
+}
+
+function buildSubQuestList(q) {
+  const subs = (q.subQuests||[]).map(sid=>state.quests.find(x=>x.id===sid)).filter(Boolean);
+  if (!subs.length) return '<div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);padding:4px 0;">None yet</div>';
+  return subs.map(s=>'<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);"><div onclick="toggleQuest(''+s.id+'');document.getElementById('qd-subs').innerHTML=buildSubQuestList(state.quests.find(x=>x.id===''+q.id+''))" style="width:18px;height:18px;border-radius:4px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;">'+(s.checked?'✓':'')+'</div><span style="flex:1;font-size:13px;color:'+(s.checked?'var(--text-muted)':'var(--text-primary)')+';'+(s.checked?'text-decoration:line-through;':'')+'">'+ escHtml(s.content)+'</span></div>').join('');
+}
+
+function buildNotesList(q) {
+  if (!q.notes?.length) return '<div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);padding:4px 0;">No notes</div>';
+  return q.notes.map(n=>'<div style="padding:7px 10px;background:var(--bg-raised);border-radius:7px;margin-bottom:5px;"><div style="font-size:13px;color:var(--text-secondary);">'+escHtml(n.content)+'</div><div style="font-family:var(--font-mono);font-size:7px;color:var(--text-muted);margin-top:3px;">'+formatDate(n.postedAt)+'</div></div>').join('');
+}
+
+function addSubQuest(parentId) {
+  const inp = document.getElementById('qd-sub-inp');
+  if (!inp?.value.trim()) return;
+  const sub = freshQuest({ content: inp.value.trim(), projectId: currentProject, parentId });
+  state.quests.push(sub);
+  const parent = state.quests.find(q=>q.id===parentId);
+  if (parent) parent.subQuests = [...(parent.subQuests||[]), sub.id];
+  saveState(); inp.value='';
+  const c = document.getElementById('qd-subs');
+  if (c) c.innerHTML = buildSubQuestList(parent);
+  SoundEngine.save();
+}
+
+function addQuestNote(questId) {
+  const inp = document.getElementById('qd-note-inp');
+  if (!inp?.value.trim()) return;
+  const q = state.quests.find(x=>x.id===questId);
+  if (!q) return;
+  if (!q.notes) q.notes = [];
+  q.notes.push({ id: genId(), content: inp.value.trim(), postedAt: todayKey() });
+  saveState(); inp.value='';
+  const c = document.getElementById('qd-notes');
+  if (c) c.innerHTML = buildNotesList(q);
+  SoundEngine.save();
+}
+
+function updateQuest(id, field, value) {
+  const q = state.quests.find(x=>x.id===id);
+  if (!q) return;
+  q[field] = value;
+  saveState(); renderQuestItems();
+}
+
+function addProject() {
+  const name = document.getElementById('project-name-inp')?.value.trim();
+  const color = document.getElementById('project-color-inp')?.value || '#6c63ff';
+  if (!name) return;
+  state.projects.push(freshProject({ name, color, itemOrder: state.projects.length }));
+  saveState(); closeModal('project-modal'); SoundEngine.save(); renderQuests();
+}
+
+function addFilter() {
+  const name = document.getElementById('filter-name-inp')?.value.trim();
+  const query = document.getElementById('filter-query-inp')?.value.trim();
+  if (!name||!query) return;
+  state.filters.push(freshFilter({ name, queryStr: query }));
+  saveState(); closeModal('filter-modal'); SoundEngine.save(); renderQuests();
 }
 
 function setQuestCat(cat) {
-  currentQuestCat = cat;
-  document.querySelectorAll('.cat-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
-  SoundEngine.tap();
+  const map = { main:'main', today:'daily', side:'side' };
+  currentProject = map[cat] || cat;
+  currentFilter = cat === 'today' ? 'today' : null;
+  renderQuestItems(); SoundEngine.tap();
 }
 
 // ============================================================
@@ -803,20 +1023,142 @@ function addFood() {
   day.nutrition.fat += fat;
   saveState();
   closeModal('food-modal');
-  ['food-name-inp','food-cals-inp','food-prot-inp','food-carbs-inp','food-fat-inp'].forEach(id => { const e = document.getElementById(id); if(e) e.value=''; });
+  clearFoodForm();
   SoundEngine.save();
+  syncNutritionToQuests(); // ← sync to daily quest
   renderNutrition();
+}
+
+function clearFoodForm() {
+  ['food-name-inp','food-cals-inp','food-prot-inp','food-carbs-inp','food-fat-inp'].forEach(id => {
+    const e = document.getElementById(id); if(e) e.value='';
+  });
+  const results = document.getElementById('food-search-results');
+  if (results) results.innerHTML = '';
+}
+
+// Prefill food form from database result
+function prefillFoodForm(food, multiplier = 1) {
+  const m = parseFloat(multiplier) || 1;
+  setVal('food-name-inp', food.name);
+  setVal('food-cals-inp', Math.round(food.calories * m));
+  setVal('food-prot-inp', Math.round(food.protein * m));
+  setVal('food-carbs-inp', Math.round(food.carbs * m));
+  setVal('food-fat-inp', Math.round(food.fat * m));
+  // Store base for multiplier recalc
+  document.getElementById('food-modal')._baseFood = food;
+}
+
+// Search food DB and render results
+async function searchFoodDB(query) {
+  const container = document.getElementById('food-search-results');
+  if (!container || !query || query.length < 2) {
+    if (container) container.innerHTML = '';
+    return;
+  }
+
+  // Local results first
+  const local = FoodDB.search(query);
+  const history = FoodDB.searchUserHistory(query);
+
+  let html = '';
+
+  if (history.length) {
+    html += `<div class="food-search-section-label">RECENT</div>`;
+    history.forEach(f => {
+      html += foodResultRow(f, true);
+    });
+  }
+
+  if (local.length) {
+    html += `<div class="food-search-section-label">DATABASE</div>`;
+    local.forEach(f => {
+      html += foodResultRow(f, false);
+    });
+  }
+
+  if (!local.length && !history.length) {
+    html += `<div class="food-search-empty">Searching USDA...</div>`;
+    container.innerHTML = html;
+    // Fallback to USDA
+    const usda = await FoodDB.searchUSDA(query);
+    let usdaHtml = usda.length
+      ? `<div class="food-search-section-label">USDA DATABASE</div>` + usda.map(f => foodResultRow(f, false)).join('')
+      : `<div class="food-search-empty">No results. Enter manually below.</div>`;
+    container.innerHTML = usdaHtml;
+    bindFoodResults();
+    return;
+  }
+
+  container.innerHTML = html;
+  bindFoodResults();
+}
+
+function foodResultRow(food, isHistory) {
+  const histBadge = isHistory ? '<span style="font-size:8px;color:var(--secondary);margin-left:4px;">★</span>' : '';
+  const deleteAttr = isHistory ? `data-history-name='${escHtml(food.name)}'` : '';
+  return `<div class="food-result-row" ${deleteAttr} data-food='${JSON.stringify({name:food.name,calories:food.calories,protein:food.protein,carbs:food.carbs,fat:food.fat,servingSize:food.servingSize||100,servingUnit:food.servingUnit||"g"})}'>
+    <div class="food-result-name">${escHtml(food.name)}${histBadge}</div>
+    <div class="food-result-macros">${food.calories} kcal · P:${food.protein}g C:${food.carbs}g F:${food.fat}g <span style="color:var(--text-muted);">${food.servingSize||100}${food.servingUnit||'g'}</span></div>
+  </div>`;
+}
+
+function bindFoodResults() {
+  document.querySelectorAll('.food-result-row').forEach(row => {
+    // Tap to select
+    row.onclick = () => {
+      const food = JSON.parse(row.dataset.food);
+      prefillFoodForm(food);
+      document.querySelectorAll('.food-result-row').forEach(r => r.classList.remove('selected'));
+      row.classList.add('selected');
+    };
+
+    // Long-press to delete from history (recent entries only)
+    if (row.dataset.historyName) {
+      let pressTimer;
+      const startPress = () => {
+        pressTimer = setTimeout(() => {
+          const name = row.dataset.historyName;
+          if (confirm(`Remove "${name}" from recent history?`)) {
+            deleteFoodFromHistory(name);
+            row.style.transition = 'opacity 0.3s';
+            row.style.opacity = '0';
+            setTimeout(() => row.remove(), 300);
+          }
+        }, 600);
+      };
+      const cancelPress = () => clearTimeout(pressTimer);
+      row.addEventListener('touchstart', startPress, { passive: true });
+      row.addEventListener('touchend', cancelPress);
+      row.addEventListener('touchmove', cancelPress, { passive: true });
+      row.addEventListener('mousedown', startPress);
+      row.addEventListener('mouseup', cancelPress);
+    }
+  });
+}
+
+function deleteFoodFromHistory(name) {
+  // Remove all occurrences of this food name from food logs
+  // (it will stop appearing in history search)
+  state._deletedFoodHistory = state._deletedFoodHistory || [];
+  if (!state._deletedFoodHistory.includes(name)) {
+    state._deletedFoodHistory.push(name);
+  }
+  saveState();
+  SoundEngine.tap();
 }
 
 function removeFood(i) {
   const day = getDay(todayKey());
   const f = day.nutrition.foods[i];
-  day.nutrition.calories -= f.calories;
-  day.nutrition.protein -= f.protein;
-  day.nutrition.carbs -= f.carbs;
-  day.nutrition.fat -= f.fat;
+  day.nutrition.calories = Math.max(0, day.nutrition.calories - f.calories);
+  day.nutrition.protein = Math.max(0, day.nutrition.protein - f.protein);
+  day.nutrition.carbs = Math.max(0, day.nutrition.carbs - f.carbs);
+  day.nutrition.fat = Math.max(0, day.nutrition.fat - f.fat);
   day.nutrition.foods.splice(i, 1);
-  saveState(); renderNutrition();
+  saveState();
+  syncNutritionToQuests(); // ← sync to daily quest
+  renderNutrition();
 }
 
 function adjustSupp(type, dir) {
@@ -970,6 +1312,20 @@ function renderSettings() {
   if (twu) twu.value = s.trainingWeightUnit;
   setToggle('toggle-sounds', s.sounds);
   setToggle('toggle-share-weight', s.shareWeight);
+  setToggle('toggle-cal-sync', s.calSyncFromFood);
+
+  // Training days per week
+  const tdays = document.getElementById('set-training-days');
+  if (tdays) tdays.value = s.trainingDaysPerWeek || 4;
+
+  // Cal sync hint
+  const hint = document.getElementById('cal-sync-hint');
+  if (hint) hint.textContent = s.calSyncFromFood
+    ? 'ON = Cal/Protein locked to Food tab — log food there to update'
+    : 'OFF = Enter Cal/Protein manually in Daily Quest';
+
+  // Show/hide cal manual inputs on daily tab based on mode
+  updateCalInputMode();
 
   // Theme grid
   const THEMES = [
@@ -1001,6 +1357,34 @@ function applyTheme(id) {
   saveState();
   renderSettings();
   SoundEngine.tap();
+}
+
+function toggleCalSyncMode(el) {
+  state.settings.calSyncFromFood = !state.settings.calSyncFromFood;
+  if (el) el.classList.toggle('on', state.settings.calSyncFromFood);
+  saveState();
+  updateCalInputMode();
+  const hint = document.getElementById('cal-sync-hint');
+  if (hint) hint.textContent = state.settings.calSyncFromFood
+    ? 'ON = Cal/Protein locked to Food tab — log food there to update'
+    : 'OFF = Enter Cal/Protein manually in Daily Quest';
+  SoundEngine.tap();
+}
+
+function updateCalInputMode() {
+  const syncMode = state.settings.calSyncFromFood;
+  const calItem = document.getElementById('sq-calories');
+  const protItem = document.getElementById('sq-protein');
+  if (!calItem || !protItem) return;
+
+  if (syncMode) {
+    // Show as read-only display — no manual input
+    const calManual = calItem.querySelector('.q-manual');
+    const protManual = protItem.querySelector('.q-manual');
+    if (calManual) calManual.innerHTML = `<div style="font-family:var(--font-mono);font-size:13px;color:var(--accent);padding:0 10px;" id="cal-display-val">${getDay(currentDailyDate).nutrition?.calories || 0}</div>`;
+    if (protManual) protManual.innerHTML = `<div style="font-family:var(--font-mono);font-size:13px;color:var(--accent);padding:0 10px;" id="prot-display-val">${getDay(currentDailyDate).nutrition?.protein || 0}g</div>`;
+  }
+  // In manual mode the HTML inputs are already there from index.html
 }
 
 function saveSetting(key, val) {

@@ -220,10 +220,9 @@ function autoRank(day) {
 }
 
 function rankColor(r) {
-  const el = document.documentElement;
-  const style = getComputedStyle(el);
   const map = { S:'--rank-s', A:'--rank-a', B:'--rank-b', C:'--rank-c', D:'--rank-d', E:'--rank-e', F:'--rank-f' };
-  return style.getPropertyValue(map[r] || '--rank-f').trim() || '#888';
+  if (!r || !map[r]) return getComputedStyle(document.documentElement).getPropertyValue('--rank-none').trim() || '#212322';
+  return getComputedStyle(document.documentElement).getPropertyValue(map[r]).trim();
 }
 
 // ── DEFAULT STATE ──
@@ -237,17 +236,23 @@ const DEFAULT_SETTINGS = {
   stepsGoal: 10000,
   bodyWeightUnit: 'lbs',
   trainingWeightUnit: 'kg',
-  weekStartDay: 0, // 0=Sunday
+  weekStartDay: 0,
+  trainingDaysPerWeek: 4,
   sounds: true,
   theme: 'sl',
   weightGoal: null,
   weightDeadline: null,
-  weightLossPace: 1.0, // lbs/week
+  weightLossPace: 1.0,
   shareWeight: false,
   showDesktop: false,
   onboardingDone: false,
   supabaseUrl: '',
   supabaseKey: '',
+  calSyncFromFood: false,
+  // Karma / productivity
+  dailyQuestGoal: 5,     // tasks to complete per day for karma
+  weeklyQuestGoal: 25,   // tasks to complete per week for karma
+  karmaEnabled: true,
 };
 
 function freshDay() {
@@ -259,7 +264,11 @@ function freshDay() {
     isRestDay: false,
     morningDone: false,
     eveningDone: false,
-    coreQuests: { sleep: false, steps: 0, calories: 0, protein: 0, trained: false, mainQuest: false },
+    coreQuests: {
+      sleepHours: 0, sleep: false,
+      steps: 0, calories: 0, protein: 0,
+      trained: false, mainQuest: false
+    },
     customQuests: [],
     nutrition: { calories: 0, protein: 0, carbs: 0, fat: 0, caffeine: 0, creatine: 0, foods: [] },
     mood: null,
@@ -268,16 +277,223 @@ function freshDay() {
   };
 }
 
+// ── QUEST SYSTEM (Todoist schema, RPG veneer) ──
+// Projects → Main Quests (boards)
+// Sections → Quest Arcs (within a board)
+// Items → Quests / Daily Quests
+// Labels → Tags
+// Filters → saved views
+
+function freshQuest(overrides = {}) {
+  return {
+    id: genId(),
+    content: '',           // quest title
+    description: '',       // notes/details
+    projectId: 'inbox',    // which main quest board
+    sectionId: null,       // which arc within board
+    parentId: null,        // for sub-quests
+    priority: 4,           // 1=legendary,2=epic,3=rare,4=common (P1-P4)
+    labels: [],            // @tags
+    due: null,             // ISO date string
+    dueString: '',         // natural language: "every monday"
+    recurring: null,       // daily|weekly|monthly|RRULE
+    dueIsRecurring: false,
+    deadline: null,        // hard deadline (separate from due)
+    duration: null,        // minutes
+    itemOrder: 0,
+    dayOrder: -1,          // position in today view
+    checked: false,
+    completedAt: null,
+    frozen: false,         // ⏸ paused
+    collapsed: false,
+    addedAt: todayKey(),
+    subQuests: [],         // child quest ids
+    notes: [],             // [{id, content, postedAt}]
+    reminder: null,        // {type:'absolute'|'relative', minuteOffset}
+    ...overrides
+  };
+}
+
+function freshProject(overrides = {}) {
+  return {
+    id: genId(),
+    name: '',
+    color: '#6c63ff',
+    viewStyle: 'list',     // list|board
+    parentId: null,
+    isArchived: false,
+    isFavorite: false,
+    isDeleted: false,
+    itemOrder: 0,
+    sections: [],          // [{id, name, sectionOrder}]
+    ...overrides
+  };
+}
+
+function freshLabel(overrides = {}) {
+  return {
+    id: genId(),
+    name: '',
+    color: '#6c63ff',
+    itemOrder: 0,
+    favorite: false,
+    ...overrides
+  };
+}
+
+function freshFilter(overrides = {}) {
+  return {
+    id: genId(),
+    name: '',
+    queryStr: '',          // "today", "p1", "@health & overdue"
+    color: '#6c63ff',
+    favorite: false,
+    ...overrides
+  };
+}
+
+// ── TRACKER (Track & Graph simplified) ──
+function freshTracker(overrides = {}) {
+  return {
+    id: genId(),
+    name: '',
+    type: 'numerical',     // numerical|boolean|duration
+    unit: '',
+    color: '#6c63ff',
+    entries: [],           // [{date, value, note}]
+    goalValue: null,
+    goalType: 'min',       // min|max|exact
+    showOnDashboard: true,
+    ...overrides
+  };
+}
+
+// ── KARMA ENGINE (Todoist karma_level mirror) ──
+const KARMA_LEVELS = [
+  { level: 0, name: 'Novice',        minPoints: 0 },
+  { level: 1, name: 'Apprentice',    minPoints: 50 },
+  { level: 2, name: 'Adventurer',    minPoints: 150 },
+  { level: 3, name: 'Hero',          minPoints: 400 },
+  { level: 4, name: 'Champion',      minPoints: 1000 },
+  { level: 5, name: 'Legend',        minPoints: 2500 },
+  { level: 6, name: 'Grandmaster',   minPoints: 6000 },
+  { level: 7, name: 'Mythic',        minPoints: 15000 },
+];
+
+function getKarmaLevel(points) {
+  let current = KARMA_LEVELS[0];
+  for (const lvl of KARMA_LEVELS) {
+    if (points >= lvl.minPoints) current = lvl;
+  }
+  return current;
+}
+
+function calculateKarma() {
+  const s = state.settings;
+  const karma = state.karma || { points: 0, completedTotal: 0, completedThisWeek: 0, completedToday: 0, streak: 0 };
+
+  // Count completed quests today and this week
+  const today = todayKey();
+  const weekStart = getCurrentWeekStart();
+
+  let todayCount = 0, weekCount = 0, totalCount = 0;
+  (state.quests || []).forEach(q => {
+    if (q.checked && q.completedAt) {
+      totalCount++;
+      if (q.completedAt >= today) todayCount++;
+      if (q.completedAt >= weekStart) weekCount++;
+    }
+  });
+
+  // Daily and weekly goal bonuses
+  const dailyGoalHit = todayCount >= (s.dailyQuestGoal || 5);
+  const weeklyGoalHit = weekCount >= (s.weeklyQuestGoal || 25);
+
+  return {
+    ...karma,
+    completedTotal: totalCount,
+    completedToday: todayCount,
+    completedThisWeek: weekCount,
+    dailyGoalHit,
+    weeklyGoalHit,
+    level: getKarmaLevel(karma.points),
+    nextLevel: KARMA_LEVELS.find(l => l.minPoints > karma.points) || KARMA_LEVELS[KARMA_LEVELS.length - 1],
+  };
+}
+
+function awardKarma(points, reason = '') {
+  if (!state.settings.karmaEnabled) return;
+  if (!state.karma) state.karma = { points: 0 };
+  const before = getKarmaLevel(state.karma.points);
+  state.karma.points = (state.karma.points || 0) + points;
+  const after = getKarmaLevel(state.karma.points);
+  if (after.level > before.level) {
+    // Level up!
+    setTimeout(() => {
+      spawnParticles('⚔', 8);
+      SoundEngine.rankS();
+    }, 100);
+  }
+  saveState();
+}
+
+// ── QUEST FILTER ENGINE (Todoist query_str logic) ──
+function evalFilter(quest, queryStr) {
+  if (!queryStr) return true;
+  const q = queryStr.toLowerCase().trim();
+
+  // Compound: & = AND, | = OR
+  if (q.includes(' & ')) return q.split(' & ').every(part => evalFilter(quest, part.trim()));
+  if (q.includes(' | ')) return q.split(' | ').some(part => evalFilter(quest, part.trim()));
+  if (q.startsWith('!')) return !evalFilter(quest, q.slice(1).trim());
+
+  const today = todayKey();
+  if (q === 'today') return quest.due === today;
+  if (q === 'tomorrow') return quest.due === addDays(today, 1);
+  if (q === 'overdue') return quest.due && quest.due < today && !quest.checked;
+  if (q === 'no due date') return !quest.due;
+  if (q === 'recurring') return quest.dueIsRecurring;
+  if (q.startsWith('p')) {
+    const p = parseInt(q.slice(1));
+    return quest.priority === p;
+  }
+  if (q.startsWith('@')) return quest.labels.some(l => l.toLowerCase() === q.slice(1));
+  if (q.startsWith('#')) return quest.projectId === q.slice(1);
+  if (q.startsWith('search:')) return quest.content.toLowerCase().includes(q.slice(7));
+  // Date range: "next 7 days"
+  const nextDays = q.match(/^next (\d+) days?$/);
+  if (nextDays) {
+    const n = parseInt(nextDays[1]);
+    return quest.due && quest.due <= addDays(today, n) && quest.due >= today;
+  }
+  return quest.content.toLowerCase().includes(q);
+}
+
+function getQuestsForFilter(queryStr) {
+  return (state.quests || []).filter(q => !q.checked && evalFilter(q, queryStr));
+}
+
 // ── GLOBAL STATE ──
 let state = {
   days: {},
   quests: [],
+  projects: [],
+  labels: [],
+  filters: [],
+  trackers: [],
   exercises: {},
   journal: [],
   weightLog: [],
+  karma: { points: 0 },
   settings: { ...DEFAULT_SETTINGS },
   _dirty: false,
+  _deletedFoodHistory: [],
 };
+
+// ── ID GENERATOR ──
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
 
 // ── PERSISTENCE ──
 function loadState() {
@@ -292,6 +508,16 @@ function loadState() {
   // Ensure today exists
   const today = todayKey();
   if (!state.days[today]) state.days[today] = freshDay();
+
+  // Ensure default projects exist (Main Quest, Daily, Side)
+  if (!state.projects.length) {
+    state.projects = [
+      freshProject({ id: 'inbox',  name: 'Inbox',       color: '#6c63ff', itemOrder: 0 }),
+      freshProject({ id: 'main',   name: 'Main Quest',  color: '#f0b323', itemOrder: 1 }),
+      freshProject({ id: 'daily',  name: 'Daily Quests',color: '#22c55e', itemOrder: 2 }),
+      freshProject({ id: 'side',   name: 'Side Quests', color: '#3b82f6', itemOrder: 3 }),
+    ];
+  }
 
   // Sync weightLog from days (backwards compat)
   Object.entries(state.days).forEach(([date, day]) => {
