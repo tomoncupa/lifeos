@@ -14,15 +14,20 @@ let alarmDismissed = { morning: false, evening: false };
 const SECTIONS = ['daily','quests','training','nutrition','journal','settings'];
 
 function switchSection(name) {
-  const isFirstRender = !document.getElementById('app')?.classList.contains('visible');
-  if (name === currentSection && !isFirstRender) return; // skip re-render if already here
+  if (name === currentSection) return; // skip if already on this tab
   currentSection = name;
   SECTIONS.forEach(s => {
     document.getElementById('section-' + s)?.classList.toggle('active', s === name);
     document.querySelector(`[data-nav="${s}"]`)?.classList.toggle('active', s === name);
   });
   SoundEngine.tap();
-  requestAnimationFrame(() => renderSection(name));
+  requestAnimationFrame(() => {
+    try {
+      renderSection(name);
+    } catch(e) {
+      console.error('renderSection error:', name, e);
+    }
+  });
 }
 
 function renderSection(name) {
@@ -603,12 +608,22 @@ function renderQuestItems() {
 }
 
 function buildQuestRow(q) {
+  if (!q || !q.id) return document.createElement('div'); // guard against corrupt data
+  // Normalize — handle migrated old format
+  q.content = q.content || q.title || '(untitled)';
+  q.checked = q.checked ?? q.done ?? false;
+  q.labels  = q.labels  || q.tags  || [];
+  q.subQuests = q.subQuests || [];
+  q.notes   = q.notes   || [];
+  q.projectId = q.projectId || 'inbox';
+  q.priority  = q.priority  || 4;
+
   const el = document.createElement('div');
   const overdue = q.due && isOverdue(q.due) && !q.checked;
   const PRIO_COLORS = ['','#f0b323','#ef4444','#3b82f6',''];
   const PRIO_LABELS = ['','LEGENDARY','EPIC','RARE',''];
-  const subDone = (q.subQuests||[]).filter(sid => state.quests.find(x=>x.id===sid)?.checked).length;
-  const subTotal = (q.subQuests||[]).length;
+  const subDone = q.subQuests.filter(sid => state.quests.find(x=>x.id===sid)?.checked).length;
+  const subTotal = q.subQuests.length;
 
   el.className = 'todo-item' + (q.checked?' done':'') + (q.frozen?' frozen':'');
   el.draggable = true;
@@ -1565,21 +1580,41 @@ window.addEventListener('DOMContentLoaded', () => {
   // Boot sequence
   setTimeout(() => {
     const boot = document.getElementById('boot-screen');
-    boot.classList.add('fade-out');
+    if (boot) boot.classList.add('fade-out');
     setTimeout(() => {
-      boot.style.display = 'none';
-      document.getElementById('app').classList.add('visible');
+      if (boot) boot.style.display = 'none';
+      document.getElementById('app')?.classList.add('visible');
 
-      // Onboarding
-      if (!state.settings.onboardingDone) {
-        startOnboarding();
-      } else {
-        switchSection('daily');
-        setupAlarms();
-        // Check morning prompt
-        const day = getDay(todayKey());
-        if (!day.morningDone) {
-          setTimeout(() => showAlarm('🌅', 'MORNING LOG', 'Log weight + intention', openMorningPrompt), 1200);
+      try {
+        // Force reset so switchSection always renders on first boot
+        currentSection = null;
+
+        if (!state.settings.onboardingDone) {
+          startOnboarding();
+        } else {
+          switchSection('daily');
+          setupAlarms();
+          const day = getDay(todayKey());
+          if (!day.morningDone) {
+            setTimeout(() => showAlarm('🌅', 'MORNING LOG', 'Log weight + intention', openMorningPrompt), 1200);
+          }
+        }
+      } catch(e) {
+        // If render fails, show a safe fallback instead of frozen screen
+        console.error('Boot render error:', e);
+        currentSection = null;
+        try {
+          // Try wiping quests only (most likely source of bad data) and retry
+          state.quests = [];
+          switchSection('daily');
+        } catch(e2) {
+          document.getElementById('app').innerHTML = `
+            <div style="padding:40px;text-align:center;font-family:monospace;color:#f0b323;">
+              <div style="font-size:32px;margin-bottom:12px;">⚠</div>
+              <div style="font-size:16px;margin-bottom:8px;">SYSTEM ERROR</div>
+              <div style="font-size:11px;color:#888;margin-bottom:20px;">${e2.message}</div>
+              <button onclick="localStorage.clear();location.reload()" style="padding:10px 20px;background:#f0b323;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">RESET & RESTART</button>
+            </div>`;
         }
       }
     }, 700);

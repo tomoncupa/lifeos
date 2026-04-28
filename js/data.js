@@ -503,25 +503,86 @@ function loadState() {
       const parsed = JSON.parse(raw);
       state = deepMerge(state, parsed);
     }
-  } catch(e) { console.warn('State load error', e); }
+  } catch(e) {
+    console.warn('State load error — starting fresh', e);
+    // Corrupt data: wipe and start clean
+    localStorage.removeItem('systemos_v2');
+  }
 
-  // Ensure today exists
+  // ── ENSURE ALL ARRAYS ARE ARRAYS (deepMerge can corrupt these) ──
+  if (!Array.isArray(state.quests))             state.quests = [];
+  if (!Array.isArray(state.projects))           state.projects = [];
+  if (!Array.isArray(state.labels))             state.labels = [];
+  if (!Array.isArray(state.filters))            state.filters = [];
+  if (!Array.isArray(state.trackers))           state.trackers = [];
+  if (!Array.isArray(state.journal))            state.journal = [];
+  if (!Array.isArray(state.weightLog))          state.weightLog = [];
+  if (!Array.isArray(state._deletedFoodHistory)) state._deletedFoodHistory = [];
+  if (!state.karma || typeof state.karma !== 'object') state.karma = { points: 0 };
+  if (!state.settings || typeof state.settings !== 'object') state.settings = { ...DEFAULT_SETTINGS };
+
+  // ── MIGRATE OLD QUEST FORMAT (patch 1-3 → patch 4+) ──
+  // Old: { id: number, title, category, done, tags }
+  // New: { id: string, content, projectId, checked, labels }
+  state.quests = state.quests.map(q => {
+    // Already migrated
+    if (q.content !== undefined) return q;
+    // Migrate old format
+    const catMap = { main: 'main', today: 'daily', side: 'side' };
+    return freshQuest({
+      id: String(q.id || genId()),       // numeric → string
+      content: q.title || q.content || '',
+      projectId: catMap[q.category] || 'inbox',
+      checked: q.done || q.checked || false,
+      completedAt: q.dueCompleted || q.completedAt || null,
+      labels: q.tags || q.labels || [],
+      due: q.due || null,
+      dueString: q.recurring || '',
+      dueIsRecurring: !!q.recurring,
+      recurring: q.recurring || null,
+      priority: q.priority || 4,
+      frozen: q.frozen || false,
+      addedAt: q.created || q.addedAt || todayKey(),
+    });
+  });
+
+  // ── ENSURE TODAY EXISTS ──
   const today = todayKey();
   if (!state.days[today]) state.days[today] = freshDay();
 
-  // Ensure default projects exist (Main Quest, Daily, Side)
-  if (!state.projects.length) {
-    state.projects = [
-      freshProject({ id: 'inbox',  name: 'Inbox',       color: '#6c63ff', itemOrder: 0 }),
-      freshProject({ id: 'main',   name: 'Main Quest',  color: '#f0b323', itemOrder: 1 }),
-      freshProject({ id: 'daily',  name: 'Daily Quests',color: '#22c55e', itemOrder: 2 }),
-      freshProject({ id: 'side',   name: 'Side Quests', color: '#3b82f6', itemOrder: 3 }),
-    ];
-  }
+  // Ensure each day has the full coreQuests shape
+  Object.values(state.days).forEach(day => {
+    if (!day.coreQuests) day.coreQuests = {};
+    const cq = day.coreQuests;
+    if (cq.sleepHours === undefined) cq.sleepHours = cq.sleep ? 7 : 0;
+    if (cq.sleep === undefined) cq.sleep = false;
+    if (cq.steps === undefined) cq.steps = 0;
+    if (cq.calories === undefined) cq.calories = 0;
+    if (cq.protein === undefined) cq.protein = 0;
+    if (cq.trained === undefined) cq.trained = false;
+    if (cq.mainQuest === undefined) cq.mainQuest = false;
+    if (!day.nutrition) day.nutrition = { calories:0, protein:0, carbs:0, fat:0, caffeine:0, creatine:0, foods:[] };
+    if (!Array.isArray(day.nutrition.foods)) day.nutrition.foods = [];
+    if (!day.customQuests) day.customQuests = [];
+    if (!day.journalPrompts) day.journalPrompts = {};
+  });
 
-  // Sync weightLog from days (backwards compat)
+  // ── ENSURE DEFAULT PROJECTS ──
+  const requiredProjects = [
+    { id: 'inbox', name: 'Inbox',        color: '#6c63ff' },
+    { id: 'main',  name: 'Main Quest',   color: '#f0b323' },
+    { id: 'daily', name: 'Daily Quests', color: '#22c55e' },
+    { id: 'side',  name: 'Side Quests',  color: '#3b82f6' },
+  ];
+  requiredProjects.forEach((rp, i) => {
+    if (!state.projects.find(p => p.id === rp.id)) {
+      state.projects.unshift(freshProject({ ...rp, itemOrder: i }));
+    }
+  });
+
+  // ── SYNC WEIGHT LOG FROM DAYS ──
   Object.entries(state.days).forEach(([date, day]) => {
-    if (day.weight !== null && !state.weightLog.find(w => w.date === date)) {
+    if (day.weight != null && !state.weightLog.find(w => w.date === date)) {
       state.weightLog.push({ date, weight: day.weight });
     }
   });
