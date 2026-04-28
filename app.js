@@ -2054,9 +2054,6 @@ function renderSettings() {
   const twu = $('set-training-weight-unit');
   if (twu) twu.value = s.trainingWeightUnit;
   const wsd = $('set-week-start');
-  if (wsd) wsd.value = s.weekStartDay;
-
-  const wsd = $('set-week-start');
   if (wsd) wsd.value = s.weekStartDay || 0;
 
   setToggle('tog-sounds', s.sounds);
@@ -2132,17 +2129,19 @@ function renderThemeGrid() {
     </div>`).join('');
 }
 
-function applyTheme(id) {
+function applyTheme(id, fromBoot = false) {
   S.settings.theme = id;
   document.documentElement.dataset.theme = id;
   const t = THEMES.find(x => x.id === id);
   if (t) {
-    document.documentElement.style.setProperty('--font-display', `"${t.fonts[0]}", serif`);
-    document.documentElement.style.setProperty('--font-ui', `"${t.fonts[1]}", sans-serif`);
+    document.documentElement.style.setProperty('--font-display', '"' + t.fonts[0] + '", serif');
+    document.documentElement.style.setProperty('--font-ui', '"' + t.fonts[1] + '", sans-serif');
   }
-  save(true);
-  renderThemeGrid();
-  SFX.tap();
+  if (!fromBoot) {
+    save(true);
+    renderThemeGrid();
+    try { SFX.tap(); } catch(e) {}
+  }
 }
 
 function saveSetting(key, val) {
@@ -2265,32 +2264,57 @@ function addProject() {
 // 30. BOOT
 // ================================================================
 function boot() {
-  document.documentElement.dataset.theme = S.settings.theme || 'ff7c';
-  applyTheme(S.settings.theme || 'ff7c');
+  // Apply theme without triggering save/sound (no user gesture yet)
+  applyTheme(S.settings.theme || 'ff7c', true);
+  // Make app visible BEFORE nav so sections exist when render runs
+  const appEl = document.getElementById('app');
+  if (appEl) appEl.classList.add('visible');
+  // Reset currentSection so nav() always renders on first call
   currentSection = null;
-  nav('daily');
-  $('app')?.classList.add('visible');
+  try {
+    nav('daily');
+  } catch(e) {
+    console.error('Boot nav error:', e);
+    // Show error on screen so player knows something went wrong
+    if (appEl) appEl.innerHTML = '<div style="padding:40px;text-align:center;font-family:monospace;color:#f0b323;"><div style="font-size:32px;margin-bottom:12px;">⚠</div><div style="margin-bottom:8px;">INIT ERROR</div><div style="font-size:11px;color:#888;margin-bottom:20px;">' + (e.message||'unknown') + '</div><button onclick="localStorage.clear();location.reload()" style="padding:12px 24px;background:#f0b323;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:14px;">RESET & RESTART</button></div>';
+  }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  load();
+  // Load saved state — wrapped so corrupt data never freezes boot
+  try { load(); } catch(e) {
+    console.warn('Load error, fresh start:', e);
+    localStorage.removeItem('sos_v3');
+  }
 
-  // Status messages during boot animation
-  const messages = ['LOADING SAVE DATA...','SYNCING MODULES...','INITIALIZING SYSTEMS...','READY.'];
+  // Rotating status messages
+  const messages = ['LOADING SAVE DATA...', 'SYNCING MODULES...', 'INITIALIZING SYSTEMS...', 'READY.'];
   let mi = 0;
-  const statusEl = $('boot-status');
+  const statusEl = document.getElementById('boot-status');
   const msgInterval = setInterval(() => {
-    if (statusEl && mi < messages.length) statusEl.textContent = messages[mi++];
-    else clearInterval(msgInterval);
-  }, 600);
+    if (mi < messages.length) {
+      if (statusEl) statusEl.textContent = messages[mi];
+      mi++;
+    } else {
+      clearInterval(msgInterval);
+    }
+  }, 580);
 
+  // Boot after animation — 2400ms deliberate delay
   setTimeout(() => {
     clearInterval(msgInterval);
-    const bs = $('boot-screen');
-    if (bs) { bs.classList.add('fade-out'); setTimeout(() => { bs.style.display='none'; }, 700); }
+
+    const bs = document.getElementById('boot-screen');
+    if (bs) {
+      bs.style.transition = 'opacity 0.6s';
+      bs.style.opacity = '0';
+      bs.style.pointerEvents = 'none';
+      setTimeout(() => { bs.style.display = 'none'; }, 650);
+    }
 
     if (!S.settings.onboardingDone) {
-      startOnboarding();
+      const ob = document.getElementById('onboarding');
+      if (ob) ob.classList.remove('hidden');
     } else {
       boot();
     }
