@@ -675,11 +675,13 @@ function startRestTimer(seconds) {
 
 function updateRestDisplay() {
   const bar = $('rest-timer-bar');
+  const txt = $('rest-timer-text');
   if (!bar) return;
   bar.style.display = 'flex';
+  if (txt) txt.style.display = 'block';
   const mins = Math.floor(_restRemaining / 60);
   const secs = _restRemaining % 60;
-  setText('rest-timer-text', `REST  ${mins}:${pad(secs)}`);
+  if (txt) txt.textContent = `REST  ${mins}:${pad(secs)}`;
   const pct = _restTotal > 0 ? (_restRemaining / _restTotal) : 0;
   const fill = $('rest-timer-fill');
   if (fill) fill.style.width = (pct * 100) + '%';
@@ -687,7 +689,9 @@ function updateRestDisplay() {
 
 function hideRestTimer() {
   const bar = $('rest-timer-bar');
+  const txt = $('rest-timer-text');
   if (bar) bar.style.display = 'none';
+  if (txt) txt.style.display = 'none';
   clearInterval(_restTimer);
   _restTimer = null;
 }
@@ -1680,14 +1684,13 @@ function renderNutrition() {
 }
 
 function renderMealSection(meal, day) {
-  const container = $(`meal-${meal}`);
-  if (!container) return;
   const items = day.meals[meal] || [];
   const mealCals = items.reduce((s,i) => s + i.cals, 0);
 
-  const existing = container.querySelector('.meal-items');
-  if (existing) existing.innerHTML = items.map((item, i) => buildFoodItemRow(item, meal, i)).join('');
-  const calEl = container.querySelector('.meal-cal-count');
+  const itemContainer = $(`meal-items-${meal}`);
+  if (itemContainer) itemContainer.innerHTML = items.map((item, i) => buildFoodItemRow(item, meal, i)).join('');
+
+  const calEl = $(`meal-cal-${meal}`);
   if (calEl) calEl.textContent = mealCals > 0 ? mealCals + ' kcal' : '';
 }
 
@@ -2052,6 +2055,9 @@ function renderSettings() {
   if (twu) twu.value = s.trainingWeightUnit;
   const wsd = $('set-week-start');
   if (wsd) wsd.value = s.weekStartDay;
+
+  const wsd = $('set-week-start');
+  if (wsd) wsd.value = s.weekStartDay || 0;
 
   setToggle('tog-sounds', s.sounds);
   setToggle('tog-rest-auto', s.restTimerAuto);

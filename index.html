@@ -1,510 +1,1382 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="sl">
+<html lang="en" data-theme="ff7c">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="System OS" />
-  <meta name="theme-color" content="#06060a" />
-  <title>System OS</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="css/themes.css" />
-  <link rel="stylesheet" href="css/main.css" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="System OS"/>
+<meta name="theme-color" content="#05050a"/>
+<title>System OS</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+/* ============================================================
+   SYSTEM OS v3 — DESIGN SYSTEM
+   8px grid · 52px min touch targets · 3 type sizes
+   ============================================================ */
+
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{height:100%;overflow:hidden;touch-action:manipulation;}
+body{
+  font-family:var(--font-ui);
+  background:var(--bg-base);
+  color:var(--text-primary);
+  height:100%;overflow:hidden;
+  position:fixed;width:100%;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+button,input,select,textarea{
+  font-family:var(--font-ui);
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{opacity:1;}
+
+/* ── CSS VARIABLES ── */
+:root{
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --nav-h:58px;
+  --topbar-h:54px;
+  --font-display:"Cinzel",serif;
+  --font-ui:"Rajdhani",sans-serif;
+  --font-mono:"Share Tech Mono",monospace;
+  --radius:12px;
+  --radius-sm:8px;
+  --radius-lg:16px;
+}
+
+/* ── THEMES ── */
+[data-theme="ff7c"]{
+  --bg-base:#05050a;
+  --bg-surface:#0c0c14;
+  --bg-card:#111118;
+  --bg-raised:#181820;
+  --bg-input:#0e0e16;
+  --accent:#00d4aa;
+  --accent-dim:rgba(0,212,170,.12);
+  --accent-glow:rgba(0,212,170,.2);
+  --gold:#c9a84c;
+  --gold-bright:#f0c040;
+  --gold-dim:rgba(201,168,76,.15);
+  --secondary:#7b5ea7;
+  --text-primary:#e8e0d0;
+  --text-secondary:#7a7060;
+  --text-muted:#38302a;
+  --border:rgba(201,168,76,.14);
+  --border-strong:rgba(0,212,170,.28);
+  --nav-glow:linear-gradient(90deg,transparent,#00d4aa 30%,#c9a84c 70%,transparent);
+  --scanline:rgba(0,0,0,.06);
+}
+[data-theme="sl"]{
+  --bg-base:#06060a;
+  --bg-surface:#0c0c16;
+  --bg-card:#10101e;
+  --bg-raised:#16162c;
+  --bg-input:#0d0d1a;
+  --accent:#6c63ff;
+  --accent-dim:rgba(108,99,255,.12);
+  --accent-glow:rgba(108,99,255,.2);
+  --gold:#a78bfa;
+  --gold-bright:#c4b5fd;
+  --gold-dim:rgba(167,139,250,.15);
+  --secondary:#38bdf8;
+  --text-primary:#e2e0f0;
+  --text-secondary:#6868a0;
+  --text-muted:#28284a;
+  --border:rgba(108,99,255,.16);
+  --border-strong:rgba(108,99,255,.35);
+  --nav-glow:linear-gradient(90deg,transparent,#6c63ff 30%,#38bdf8 70%,transparent);
+  --scanline:rgba(108,99,255,.025);
+}
+[data-theme="ff7r"]{
+  --bg-base:#040608;
+  --bg-surface:#080c12;
+  --bg-card:#0c1018;
+  --bg-raised:#101620;
+  --bg-input:#090d15;
+  --accent:#00c8e8;
+  --accent-dim:rgba(0,200,232,.12);
+  --accent-glow:rgba(0,200,232,.2);
+  --gold:#e8a020;
+  --gold-bright:#ffbe30;
+  --gold-dim:rgba(232,160,32,.15);
+  --secondary:#8040c0;
+  --text-primary:#d8e8f0;
+  --text-secondary:#5080a0;
+  --text-muted:#182030;
+  --border:rgba(0,200,232,.14);
+  --border-strong:rgba(0,200,232,.32);
+  --nav-glow:linear-gradient(90deg,transparent,#00c8e8 30%,#8040c0 70%,transparent);
+  --scanline:rgba(0,200,232,.02);
+}
+[data-theme="ro"]{
+  --bg-base:#c3d6f4;
+  --bg-surface:#d8e8f8;
+  --bg-card:#eef4fc;
+  --bg-raised:#e4eef8;
+  --bg-input:#f5f8ff;
+  --accent:#3a6ea8;
+  --accent-dim:rgba(58,110,168,.12);
+  --accent-glow:rgba(58,110,168,.18);
+  --gold:#5a4a2a;
+  --gold-bright:#3a5a8a;
+  --gold-dim:rgba(90,74,42,.12);
+  --secondary:#4a6a8a;
+  --text-primary:#1a1a2e;
+  --text-secondary:#4a5a6a;
+  --text-muted:#9aaaba;
+  --border:rgba(150,180,220,.6);
+  --border-strong:rgba(58,110,168,.5);
+  --nav-glow:linear-gradient(90deg,transparent,#6a9abf 30%,#c3d6f4 70%,transparent);
+  --scanline:rgba(0,0,0,0);
+  --font-display:"Palatino Linotype","Book Antiqua",Palatino,serif;
+  --font-ui:Tahoma,"Segoe UI",Geneva,sans-serif;
+  --font-mono:"Courier New",Courier,monospace;
+}
+[data-theme="ro"] body{
+  background:linear-gradient(160deg,#c3d6f4 0%,#ddeeff 50%,#eef4fc 100%);
+}
+[data-theme="ro"] body::before{display:none;}
+[data-theme="ro"] .card{border:1px solid #b8cce0;box-shadow:1px 1px 0 #fff inset,-1px -1px 0 rgba(0,0,0,.06) inset;}
+[data-theme="og"]{
+  --bg-base:#3a4560;
+  --bg-surface:#4a5570;
+  --bg-card:#526080;
+  --bg-raised:#5a6a8a;
+  --bg-input:#465068;
+  --accent:#ceeeff;
+  --accent-dim:rgba(206,238,255,.12);
+  --accent-glow:rgba(206,238,255,.15);
+  --gold:#ffffff;
+  --gold-bright:#ffffff;
+  --gold-dim:rgba(255,255,255,.15);
+  --secondary:#d88038;
+  --text-primary:#ffffff;
+  --text-secondary:#b8c8e0;
+  --text-muted:rgba(255,255,255,.25);
+  --border:rgba(206,238,255,.2);
+  --border-strong:rgba(206,238,255,.45);
+  --nav-glow:linear-gradient(90deg,transparent,#ceeeff 30%,#d88038 70%,transparent);
+  --scanline:rgba(0,0,0,.03);
+}
+
+/* Scanlines overlay */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,var(--scanline) 2px,var(--scanline) 4px);
+  opacity:.5;
+}
+
+/* ── TYPE SCALE ── */
+.t-label{font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-secondary);}
+.t-body{font-family:var(--font-ui);font-size:15px;color:var(--text-primary);}
+.t-value{font-family:var(--font-mono);font-size:22px;font-weight:700;color:var(--text-primary);}
+.t-display{font-family:var(--font-display);font-weight:700;letter-spacing:.08em;color:var(--gold-bright);}
+
+/* ── LAYOUT ── */
+#app{
+  display:flex;flex-direction:column;
+  height:100%;opacity:0;transition:opacity .4s;
+}
+#app.visible{opacity:1;}
+.topbar{
+  height:calc(var(--topbar-h) + var(--safe-top));
+  padding:var(--safe-top) 16px 0;
+  background:rgba(0,0,0,.6);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding-bottom:10px;
+  flex-shrink:0;
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  position:relative;z-index:50;
+}
+.topbar::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:var(--nav-glow);opacity:.5;
+}
+.topbar-brand{display:flex;flex-direction:column;gap:2px;}
+.topbar-brand-name{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--gold-bright);letter-spacing:.2em;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.topbar-rank{
+  font-family:var(--font-display);font-size:18px;font-weight:900;
+  width:34px;height:34px;border-radius:8px;border:2px solid;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s;
+}
+
+/* Rest timer bar */
+#rest-timer-bar{
+  display:none;position:absolute;bottom:0;left:0;right:0;height:3px;
+  background:var(--bg-raised);overflow:hidden;
+}
+#rest-timer-fill{height:100%;background:var(--accent);transition:width .5s linear;}
+#rest-timer-text{
+  font-family:var(--font-mono);font-size:9px;color:var(--accent);
+  position:absolute;bottom:4px;right:56px;letter-spacing:.1em;
+  background:var(--bg-surface);padding:2px 8px;border-radius:4px;
+}
+
+/* Sync dot */
+.sync-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--text-muted);
+  transition:background .3s;
+}
+.sync-dot[data-status=synced]{background:#22c55e;}
+.sync-dot[data-status=pending]{background:#f0b323;animation:pulse 1s ease infinite;}
+.sync-dot[data-status=offline]{background:#ef4444;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.streak-pill{
+  display:flex;align-items:center;gap:4px;
+  background:var(--bg-raised);border:1px solid var(--border);
+  border-radius:20px;padding:4px 10px;
+  font-family:var(--font-mono);font-size:12px;color:var(--gold-bright);
+}
+
+/* Main scrollable content */
+#main{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  padding-bottom:calc(var(--nav-h) + max(var(--safe-bottom),8px) + 8px);
+  overscroll-behavior:contain;
+}
+#main::-webkit-scrollbar{display:none;}
+
+/* Bottom nav */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  height:calc(var(--nav-h) + max(var(--safe-bottom),8px));
+  padding-bottom:max(var(--safe-bottom),8px);
+  background:rgba(0,0,0,.88);
+  border-top:1px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-around;
+  padding-top:6px;
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  z-index:100;
+  position:fixed;
+}
+.bottom-nav::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:var(--nav-glow);opacity:.6;
+}
+.nav-item{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:4px 8px;min-width:48px;
+  background:none;border:none;color:var(--text-muted);
+  cursor:pointer;transition:color .18s;position:relative;
+}
+.nav-item.active{color:var(--accent);}
+.nav-item.active .nav-icon{filter:drop-shadow(0 0 5px var(--accent));}
+.nav-icon{font-size:20px;line-height:1;}
+.nav-label{font-family:var(--font-mono);font-size:7px;letter-spacing:.04em;text-transform:uppercase;}
+.nav-badge{
+  position:absolute;top:0;right:4px;
+  background:var(--accent);color:#000;
+  font-family:var(--font-mono);font-size:8px;font-weight:700;
+  min-width:16px;height:16px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;padding:0 3px;
+}
+
+/* Sections */
+.section{display:none;animation:secIn .2s ease;}
+.section.active{display:block;}
+@keyframes secIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── CARDS ── */
+.card{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+}
+.card-pad{padding:16px;}
+.section-hdr{
+  padding:20px 16px 8px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.section-title{font-family:var(--font-display);font-size:10px;font-weight:700;letter-spacing:.22em;color:var(--gold);text-transform:uppercase;}
+
+/* ── BUTTONS ── */
+.btn-primary{
+  display:flex;align-items:center;justify-content:center;
+  min-height:52px;padding:0 20px;border-radius:var(--radius);
+  background:var(--accent-dim);border:1px solid var(--accent);
+  color:var(--accent);font-family:var(--font-display);font-size:11px;
+  font-weight:700;letter-spacing:.14em;cursor:pointer;transition:all .18s;
+  width:100%;
+}
+.btn-primary:active{transform:scale(.98);background:var(--accent);color:#000;}
+.btn-ghost{
+  min-height:40px;padding:0 16px;border-radius:var(--radius-sm);
+  background:none;border:1px solid var(--border);color:var(--text-secondary);
+  font-family:var(--font-mono);font-size:10px;cursor:pointer;transition:all .15s;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.btn-ghost:active{border-color:var(--accent);color:var(--accent);}
+.btn-ghost.small{min-height:32px;padding:0 10px;font-size:9px;}
+.btn-danger{background:none;border:1px solid var(--text-muted);color:var(--text-secondary);border-radius:var(--radius-sm);padding:0 16px;min-height:52px;font-family:var(--font-mono);font-size:10px;cursor:pointer;}
+.btn-danger:active{border-color:#ef4444;color:#ef4444;}
+.btn-icon{background:none;border:none;color:var(--text-secondary);cursor:pointer;padding:8px;font-size:18px;display:flex;align-items:center;justify-content:center;min-width:40px;min-height:40px;}
+
+/* ── INPUTS ── */
+.input{
+  width:100%;background:var(--bg-input);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:14px 16px;
+  color:var(--text-primary);font-family:var(--font-ui);font-size:15px;
+  outline:none;transition:border-color .18s;
+}
+.input:focus{border-color:var(--accent);}
+.input::placeholder{color:var(--text-muted);font-style:italic;}
+.input-sm{padding:10px 12px;font-size:14px;}
+textarea.input{resize:none;min-height:72px;line-height:1.6;}
+select.input{-webkit-appearance:none;cursor:pointer;}
+
+/* Toggle */
+.toggle{
+  width:44px;height:26px;border-radius:13px;
+  background:var(--bg-raised);border:1px solid var(--border);
+  position:relative;cursor:pointer;transition:all .28s;flex-shrink:0;
+}
+.toggle.on{background:var(--accent-dim);border-color:var(--accent);}
+.toggle::after{
+  content:'';position:absolute;top:3px;left:3px;
+  width:18px;height:18px;border-radius:50%;
+  background:var(--text-muted);transition:transform .28s,background .28s;
+}
+.toggle.on::after{transform:translateX(18px);background:var(--accent);}
+
+/* ============================================================
+   BOOT SCREEN
+   ============================================================ */
+#boot-screen{
+  position:fixed;inset:0;background:var(--bg-base);
+  display:flex;align-items:center;justify-content:center;
+  z-index:10000;transition:opacity .7s;
+}
+#boot-screen.fade-out{opacity:0;pointer-events:none;}
+.boot-content{text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px;}
+.boot-hex{font-size:56px;color:var(--accent);animation:hexPulse 1.8s ease-in-out infinite;}
+@keyframes hexPulse{0%,100%{filter:drop-shadow(0 0 10px var(--accent))}50%{filter:drop-shadow(0 0 32px var(--accent)) drop-shadow(0 0 60px var(--accent))}}
+.boot-title{font-family:var(--font-display);font-size:30px;font-weight:900;letter-spacing:.3em;color:var(--gold-bright);}
+.boot-ver{font-family:var(--font-mono);font-size:9px;color:var(--text-secondary);letter-spacing:.18em;}
+.boot-bar{width:180px;height:2px;background:var(--bg-raised);border-radius:1px;overflow:hidden;}
+.boot-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--gold-bright));animation:bootFill 2.2s ease-out forwards;}
+@keyframes bootFill{from{width:0}to{width:100%}}
+.boot-status{font-family:var(--font-mono);font-size:9px;color:var(--text-secondary);letter-spacing:.1em;min-height:14px;}
+
+/* ============================================================
+   ONBOARDING
+   ============================================================ */
+#onboarding{
+  position:fixed;inset:0;background:var(--bg-base);
+  display:flex;align-items:center;justify-content:center;
+  z-index:9000;padding:24px;
+}
+#onboarding.hidden{display:none;}
+.ob-card{
+  background:var(--bg-card);border:1px solid var(--border-strong);
+  border-radius:20px;padding:32px 24px;max-width:420px;width:100%;
+}
+.ob-dots{display:flex;gap:6px;margin-bottom:24px;}
+.ob-dot{width:6px;height:6px;border-radius:50%;background:var(--text-muted);}
+.ob-dot.active{background:var(--accent);}
+.ob-step{display:none;}
+.ob-step.active{display:block;}
+.ob-title{font-family:var(--font-display);font-size:22px;color:var(--gold-bright);margin-bottom:4px;letter-spacing:.12em;}
+.ob-sub{font-family:var(--font-mono);font-size:9px;color:var(--text-secondary);letter-spacing:.1em;margin-bottom:20px;}
+.ob-note{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);margin-top:10px;line-height:1.6;}
+
+/* ============================================================
+   DAILY TAB
+   ============================================================ */
+.daily-date-nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px 4px;
+}
+.date-nav-btn{
+  width:44px;height:44px;border-radius:var(--radius-sm);
+  background:var(--bg-raised);border:1px solid var(--border);
+  color:var(--accent);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.date-nav-btn.hidden{opacity:0;pointer-events:none;}
+.date-nav-label{font-family:var(--font-mono);font-size:12px;color:var(--text-primary);letter-spacing:.08em;}
+
+/* Weight + Rank hero */
+.daily-hero{
+  margin:0 16px 12px;padding:20px;
+  background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);
+  display:flex;align-items:center;gap:20px;
+}
+.daily-rank-wrap{
+  width:72px;height:72px;flex-shrink:0;
+  border-radius:var(--radius);border:2px solid;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-size:40px;font-weight:900;
+  cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
+}
+.daily-rank-wrap::after{content:'';position:absolute;inset:0;background:currentColor;opacity:.06;}
+.daily-hero-info{flex:1;}
+.daily-weight-wrap{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.daily-weight-label{font-family:var(--font-mono);font-size:9px;color:var(--text-secondary);letter-spacing:.1em;}
+.daily-weight-input{
+  background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:8px 10px;color:var(--gold-bright);font-family:var(--font-mono);font-size:18px;
+  font-weight:700;width:100px;text-align:center;outline:none;transition:border-color .18s;
+}
+.daily-weight-input:focus{border-color:var(--gold);}
+.daily-progress-label{font-family:var(--font-mono);font-size:8px;color:var(--text-secondary);margin-bottom:4px;}
+.daily-progress-track{height:3px;background:var(--bg-raised);border-radius:2px;overflow:hidden;}
+.daily-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--gold-bright));border-radius:2px;transition:width .5s ease;}
+
+/* Quest rows */
+.quest-rows{padding:0 16px;display:flex;flex-direction:column;gap:8px;margin-bottom:8px;}
+.quest-row{
+  min-height:64px;background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius);display:flex;align-items:center;
+  padding:0 16px;gap:14px;cursor:pointer;transition:all .22s;
+  position:relative;overflow:hidden;
+}
+.quest-row:active{transform:scale(.99);}
+.quest-row.done{border-color:var(--accent-dim);background:var(--accent-dim);}
+.quest-row.done .quest-row-name{color:var(--accent);}
+.quest-dot{
+  width:32px;height:32px;border-radius:8px;flex-shrink:0;
+  border:2px solid var(--border);display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;transition:all .22s;background:var(--bg-raised);
+  color:var(--bg-base);
+}
+.quest-dot.done{background:var(--accent);border-color:var(--accent);}
+.quest-row-info{flex:1;min-width:0;}
+.quest-row-name{font-family:var(--font-ui);font-size:15px;font-weight:600;color:var(--text-primary);transition:color .22s;}
+.quest-row-sub{font-family:var(--font-mono);font-size:9px;color:var(--text-secondary);margin-top:2px;letter-spacing:.06em;}
+.quest-row-val{font-family:var(--font-mono);font-size:14px;color:var(--gold-bright);flex-shrink:0;}
+.quest-row.link-row::after{content:'›';position:absolute;right:16px;color:var(--accent);font-size:20px;}
+
+/* Upcoming quests */
+.upcoming-section{padding:0 16px 8px;}
+.upcoming-quest-row{
+  min-height:48px;display:flex;align-items:center;gap:10px;padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;
+}
+.upcoming-quest-row:last-child{border-bottom:none;}
+.uq-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.uq-content{flex:1;font-family:var(--font-ui);font-size:14px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.uq-due{font-family:var(--font-mono);font-size:9px;color:var(--accent);flex-shrink:0;}
+
+/* Share button */
+.daily-actions{padding:0 16px 12px;display:flex;gap:8px;}
+.share-btn{
+  flex:1;min-height:52px;border-radius:var(--radius);
+  background:var(--gold-dim);border:1px solid var(--gold);
+  color:var(--gold-bright);font-family:var(--font-display);font-size:10px;
+  font-weight:700;letter-spacing:.14em;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;transition:all .18s;
+}
+.share-btn:active{background:var(--gold);color:#000;}
+
+/* ============================================================
+   QUEST TAB
+   ============================================================ */
+.quest-layout{
+  display:flex;height:100%;position:relative;
+}
+.quest-sidebar{
+  width:120px;flex-shrink:0;border-right:1px solid var(--border);
+  padding:8px 6px;overflow-y:auto;
+}
+.quest-sidebar::-webkit-scrollbar{display:none;}
+.sidebar-row{
+  min-height:40px;display:flex;align-items:center;gap:6px;
+  padding:8px 6px;border-radius:var(--radius-sm);cursor:pointer;
+  font-family:var(--font-ui);font-size:12px;color:var(--text-secondary);
+  transition:all .15s;margin-bottom:2px;
+}
+.sidebar-row:active,.sidebar-row.active{background:var(--accent-dim);color:var(--accent);}
+.sidebar-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.sidebar-label{flex:1;font-size:12px;line-height:1.3;}
+.sidebar-badge{
+  font-family:var(--font-mono);font-size:8px;background:var(--bg-raised);
+  padding:1px 5px;border-radius:8px;color:var(--text-muted);flex-shrink:0;
+}
+.sidebar-divider{height:1px;background:var(--border);margin:6px 0;}
+.sidebar-add-project{
+  padding:8px 6px;font-family:var(--font-mono);font-size:8px;
+  color:var(--text-muted);cursor:pointer;border-radius:var(--radius-sm);
+  margin-top:4px;
+}
+.sidebar-add-project:active{color:var(--accent);}
+
+.quest-main{flex:1;overflow-y:auto;padding:8px 10px 120px;}
+.quest-main::-webkit-scrollbar{display:none;}
+
+/* Quest rows */
+.quest-row-wrap{margin-bottom:6px;}
+.quest-row{
+  min-height:60px;background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius);display:flex;align-items:flex-start;
+  padding:12px 10px;gap:10px;transition:all .2s;
+}
+.quest-row.done{opacity:.4;}
+.quest-row.done .quest-content{text-decoration:line-through;}
+.quest-row.frozen{opacity:.5;border-style:dashed;}
+.quest-row.overdue{border-color:rgba(239,68,68,.3);}
+.quest-check{
+  width:28px;height:28px;border-radius:7px;border:2px solid var(--border);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:13px;cursor:pointer;transition:all .18s;background:var(--bg-raised);
+  color:var(--bg-base);margin-top:2px;
+}
+.quest-check.done{background:var(--accent);border-color:var(--accent);}
+.quest-check.small{width:20px;height:20px;border-radius:5px;font-size:10px;}
+.quest-check.prio-legendary{border-color:#f0b323;}
+.quest-check.prio-epic{border-color:#ef4444;}
+.quest-check.prio-rare{border-color:#3b82f6;}
+.quest-body{flex:1;min-width:0;cursor:pointer;}
+.quest-content{font-family:var(--font-ui);font-size:15px;font-weight:500;color:var(--text-primary);line-height:1.4;}
+.quest-meta{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;align-items:center;}
+.quest-due{font-family:var(--font-mono);font-size:8px;color:var(--accent);}
+.quest-due.overdue{color:#ef4444;}
+.quest-label{font-family:var(--font-mono);font-size:8px;color:var(--gold);}
+.quest-recurring,.quest-prio{font-family:var(--font-mono);font-size:9px;color:var(--secondary);}
+.quest-meta-icon{font-family:var(--font-mono);font-size:8px;color:var(--text-muted);margin-left:4px;}
+.quest-actions{display:flex;gap:4px;flex-shrink:0;}
+.quest-action-btn{
+  min-width:32px;min-height:32px;background:none;border:none;
+  color:var(--text-muted);font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;padding:4px;border-radius:6px;
+}
+.quest-action-btn:active{background:var(--bg-raised);color:var(--text-secondary);}
+.quest-action-btn.danger:active{color:#ef4444;}
+
+/* Empty states */
+.quest-empty{padding:40px 20px;text-align:center;}
+.quest-empty-icon{font-size:36px;margin-bottom:12px;}
+.quest-empty{font-family:var(--font-display);font-size:14px;color:var(--gold-bright);margin-bottom:6px;}
+.quest-empty-sub{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);margin-top:6px;}
+.completed-toggle{padding:10px 4px;font-family:var(--font-mono);font-size:9px;color:var(--text-secondary);cursor:pointer;}
+.empty-hint{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);padding:12px 4px;font-style:italic;}
+
+/* Quick add bar */
+.quick-add-bar{
+  position:fixed;bottom:calc(var(--nav-h) + max(var(--safe-bottom),8px));
+  left:0;right:0;
+  background:var(--bg-surface);border-top:1px solid var(--border);
+  padding:10px 12px;display:flex;gap:8px;z-index:90;
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+}
+.quick-add-input{
+  flex:1;background:var(--bg-input);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px 14px;
+  color:var(--text-primary);font-family:var(--font-ui);font-size:14px;
+  outline:none;transition:border-color .18s;
+}
+.quick-add-input:focus{border-color:var(--accent);}
+.quick-add-input::placeholder{color:var(--text-muted);font-size:12px;}
+.quick-add-btn{
+  width:44px;height:44px;border-radius:var(--radius-sm);
+  background:var(--accent-dim);border:1px solid var(--accent);
+  color:var(--accent);font-size:24px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.quick-add-btn:active{background:var(--accent);color:#000;}
+.nlp-hint{
+  position:fixed;bottom:calc(var(--nav-h) + max(var(--safe-bottom),8px) + 64px);
+  left:12px;right:12px;
+  background:var(--bg-raised);border:1px solid var(--accent);border-radius:var(--radius-sm);
+  padding:6px 12px;font-family:var(--font-mono);font-size:9px;color:var(--accent);
+  z-index:91;display:none;
+}
+
+/* ============================================================
+   TRAINING TAB
+   ============================================================ */
+.training-date-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;}
+.session-info{display:flex;align-items:center;gap:8px;}
+.session-timer{font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);}
+
+.muscle-heatmap{
+  margin:0 16px 12px;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:5px;
+}
+.heatmap-cell{
+  min-height:40px;border-radius:var(--radius-sm);padding:4px 6px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .15s;
+}
+.heatmap-cell span{font-family:var(--font-mono);font-size:7px;color:rgba(255,255,255,.8);text-align:center;letter-spacing:0;line-height:1.3;}
+.heatmap-cell:active{transform:scale(.95);}
+
+.exercise-list{padding:0 16px;}
+.exercise-card{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius);margin-bottom:12px;overflow:hidden;
+}
+.ex-header{
+  padding:14px 16px 10px;
+  display:flex;align-items:flex-start;justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,.04);
+}
+.ex-title-wrap{flex:1;}
+.ex-name{font-family:var(--font-ui);font-size:16px;font-weight:700;color:var(--text-primary);}
+.ex-pb{font-family:var(--font-mono);font-size:8px;color:var(--gold);margin-top:3px;}
+.ex-last{font-family:var(--font-mono);font-size:8px;color:var(--accent);margin-top:2px;}
+.ex-remove{background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:4px 6px;min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;}
+
+.sets-header{
+  display:grid;grid-template-columns:28px 1fr 1fr 64px 44px;gap:4px;
+  padding:6px 16px;background:rgba(0,0,0,.2);
+}
+.sets-header span{font-family:var(--font-mono);font-size:8px;color:var(--text-muted);text-align:center;letter-spacing:.08em;text-transform:uppercase;}
+.set-row{
+  display:grid;grid-template-columns:28px 1fr 1fr 64px 44px;gap:4px;
+  padding:4px 16px;align-items:center;
+}
+.set-num{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-align:center;}
+.set-inp{
+  background:var(--bg-input);border:1px solid var(--border);border-radius:6px;
+  padding:10px 6px;color:var(--text-primary);font-family:var(--font-mono);
+  font-size:15px;text-align:center;outline:none;width:100%;
+  transition:border-color .15s;min-height:44px;
+}
+.set-inp:focus{border-color:var(--accent);}
+.set-inp::placeholder{color:var(--text-muted);font-size:11px;}
+.set-inp.rir{background:var(--bg-raised);}
+.set-done-btn{
+  min-height:44px;border-radius:6px;border:1px solid var(--border);
+  background:var(--bg-raised);color:var(--text-muted);font-size:14px;
+  cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;
+}
+.set-done-btn.done{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+.set-done-btn:active{transform:scale(.93);}
+.ex-footer{
+  padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.ex-volume,.ex-1rm{font-family:var(--font-mono);font-size:9px;color:var(--gold);}
+.ex-notes{
+  width:calc(100% - 32px);margin:0 16px 12px;
+  background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:10px 12px;color:var(--text-secondary);font-family:var(--font-ui);font-size:13px;
+  outline:none;resize:none;min-height:44px;line-height:1.5;
+}
+.training-empty,.empty-state{padding:40px 20px;text-align:center;}
+.training-empty-icon,.empty-state-icon{font-size:36px;margin-bottom:10px;}
+.training-empty-sub,.empty-state-sub{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);margin-top:6px;}
+.training-actions{padding:0 16px 12px;display:flex;gap:8px;}
+
+/* Exercise picker */
+.muscle-chips{display:flex;gap:6px;padding:0 0 10px;flex-wrap:wrap;}
+.muscle-chip{
+  padding:6px 12px;border-radius:20px;
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.05em;
+  border:1px solid var(--border);background:none;color:var(--text-secondary);
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.muscle-chip.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+.picker-row{
+  min-height:52px;padding:14px 12px;border-bottom:1px solid var(--border);
+  cursor:pointer;font-family:var(--font-ui);font-size:14px;color:var(--text-primary);
+  display:flex;align-items:center;transition:background .13s;
+}
+.picker-row:active{background:var(--accent-dim);}
+.picker-row:last-child{border-bottom:none;}
+
+/* ============================================================
+   NUTRITION TAB
+   ============================================================ */
+.nut-totals{
+  margin:12px 16px;padding:16px;
+  background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);
+}
+.nut-totals-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
+.nut-stat{text-align:center;}
+.nut-val{font-family:var(--font-mono);font-size:20px;font-weight:700;color:var(--text-primary);}
+.nut-val.over{color:#ef4444;}
+.nut-val.good{color:var(--accent);}
+.nut-lbl{font-family:var(--font-mono);font-size:7px;color:var(--text-muted);letter-spacing:.08em;margin-top:3px;text-transform:uppercase;}
+.nut-bar-row{margin-bottom:6px;}
+.nut-bar-label{font-family:var(--font-mono);font-size:8px;color:var(--text-secondary);margin-bottom:3px;}
+.nut-bar-track{height:4px;background:var(--bg-raised);border-radius:2px;overflow:hidden;}
+.nut-bar-fill{height:100%;border-radius:2px;transition:width .5s ease;}
+.nut-bar-fill.prot{background:var(--accent);}
+.nut-bar-fill.cal{background:var(--gold-bright);}
+.nut-tdee{font-family:var(--font-mono);font-size:8px;color:var(--text-muted);margin-top:8px;}
+
+.meal-section{
+  margin:0 16px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;
+}
+.meal-header{
+  min-height:52px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;
+}
+.meal-name{font-family:var(--font-display);font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--gold);text-transform:uppercase;}
+.meal-cal-count{font-family:var(--font-mono);font-size:10px;color:var(--text-secondary);}
+.meal-add-btn{
+  min-width:36px;min-height:36px;background:var(--accent-dim);border:1px solid var(--accent);
+  border-radius:var(--radius-sm);color:var(--accent);font-size:20px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.meal-items{padding:0 16px 8px;}
+.food-item-row{
+  min-height:48px;display:flex;align-items:center;gap:8px;
+  padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);
+}
+.food-item-row:last-child{border-bottom:none;}
+.food-item-name{flex:1;font-family:var(--font-ui);font-size:13px;color:var(--text-primary);}
+.food-item-cals{font-family:var(--font-mono);font-size:11px;color:var(--gold-bright);}
+.food-item-macros{font-family:var(--font-mono);font-size:8px;color:var(--text-muted);}
+.food-item-del{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:6px;font-size:16px;min-width:32px;min-height:32px;display:flex;align-items:center;justify-content:center;}
+
+.supplement-section{margin:0 16px 12px;padding:16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);}
+.supp-row{min-height:52px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.supp-row:last-child{border-bottom:none;}
+.supp-name{font-family:var(--font-ui);font-size:14px;color:var(--text-primary);flex:1;}
+.supp-ctrl{display:flex;align-items:center;gap:8px;}
+.supp-btn{min-width:36px;min-height:36px;border-radius:var(--radius-sm);background:var(--bg-raised);border:1px solid var(--border);color:var(--accent);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.supp-val{font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--gold-bright);min-width:32px;text-align:center;}
+.supp-unit{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);}
+
+/* Food search */
+.food-search-results{max-height:220px;overflow-y:auto;margin-bottom:10px;}
+.food-search-results::-webkit-scrollbar{display:none;}
+.search-result{
+  min-height:52px;padding:12px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .13s;
+}
+.search-result:active{background:var(--accent-dim);}
+.sr-name{display:block;font-family:var(--font-ui);font-size:14px;color:var(--text-primary);margin-bottom:2px;}
+.sr-macros{display:block;font-family:var(--font-mono);font-size:9px;color:var(--text-secondary);}
+.search-empty{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);padding:12px;text-align:center;}
+
+/* ============================================================
+   JOURNAL TAB
+   ============================================================ */
+.journal-day-summary{
+  margin:12px 16px 0;padding:12px 16px;
+  background:var(--bg-raised);border-radius:var(--radius-sm);
+  font-family:var(--font-mono);font-size:10px;color:var(--text-secondary);
+  letter-spacing:.06em;
+}
+
+.energy-section{padding:12px 16px;}
+.energy-label{font-family:var(--font-mono);font-size:9px;color:var(--text-secondary);letter-spacing:.1em;margin-bottom:10px;}
+.energy-row{display:flex;gap:8px;}
+.energy-btn{
+  flex:1;min-height:56px;border-radius:var(--radius);background:var(--bg-card);border:1px solid var(--border);
+  font-size:24px;cursor:pointer;transition:all .18s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+}
+.energy-btn.selected{background:var(--accent-dim);border-color:var(--accent);transform:scale(1.05);}
+.energy-btn span{font-family:var(--font-mono);font-size:7px;color:var(--text-muted);}
+.energy-btn.selected span{color:var(--accent);}
+
+.journal-prompts{padding:0 16px;}
+.prompt-card{margin-bottom:10px;}
+.prompt-label{font-family:var(--font-mono);font-size:8px;color:var(--accent);letter-spacing:.1em;margin-bottom:5px;text-transform:uppercase;}
+
+.time-tracker-section{padding:0 16px 12px;}
+.time-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+#time-tracker-running{
+  padding:10px 14px;background:var(--accent-dim);border:1px solid var(--accent);
+  border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:12px;color:var(--accent);
+  margin-bottom:8px;letter-spacing:.08em;
+}
+.time-block{
+  padding:10px 14px;background:var(--bg-raised);border-radius:var(--radius-sm);
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;
+}
+.tb-label{font-family:var(--font-ui);font-size:13px;color:var(--text-primary);}
+.tb-dur{font-family:var(--font-mono);font-size:11px;color:var(--gold-bright);}
+#time-blocks-list{max-height:180px;overflow-y:auto;}
+#time-blocks-list::-webkit-scrollbar{display:none;}
+
+.journal-section{padding:0 16px;}
+.journal-label{font-family:var(--font-mono);font-size:9px;color:var(--text-secondary);letter-spacing:.1em;margin-bottom:6px;text-transform:uppercase;}
+
+/* Charts */
+.chart-section{padding:0 16px 12px;}
+.chart-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;}
+.chart-title{font-family:var(--font-display);font-size:9px;color:var(--gold);letter-spacing:.16em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+canvas.chart-canvas{width:100%;display:block;}
+
+.journal-quest-log{padding:0 16px 12px;}
+.jql-row{min-height:44px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.04);padding:8px 0;}
+.jql-dot{width:20px;height:20px;border-radius:5px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--bg-base);}
+.jql-dot.done{background:var(--accent);border-color:var(--accent);}
+.jql-content{flex:1;font-family:var(--font-ui);font-size:13px;color:var(--text-primary);}
+.jql-time{font-family:var(--font-mono);font-size:8px;color:var(--text-muted);}
+.line-through{text-decoration:line-through;color:var(--text-muted);}
+
+/* ============================================================
+   SETTINGS TAB
+   ============================================================ */
+.settings-group{padding:0 16px 16px;}
+.settings-group-title{font-family:var(--font-mono);font-size:8px;letter-spacing:.18em;color:var(--gold);text-transform:uppercase;padding:16px 0 10px;border-bottom:1px solid var(--border);margin-bottom:8px;}
+.settings-row{
+  min-height:56px;display:flex;align-items:center;justify-content:space-between;
+  padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);
+  margin-bottom:6px;gap:12px;
+}
+.settings-lbl{font-family:var(--font-ui);font-size:14px;font-weight:500;color:var(--text-primary);}
+.settings-sub{font-family:var(--font-mono);font-size:8px;color:var(--text-secondary);margin-top:2px;}
+.settings-inp{
+  background:var(--bg-input);border:1px solid var(--border);border-radius:6px;
+  padding:8px 10px;color:var(--accent);font-family:var(--font-mono);font-size:12px;
+  text-align:center;outline:none;width:88px;transition:border-color .18s;
+  -webkit-appearance:none;
+}
+.settings-inp:focus{border-color:var(--accent);}
+.settings-inp.wide{width:140px;text-align:left;}
+.theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 16px;}
+.theme-card{padding:12px 8px;border-radius:var(--radius);border:2px solid var(--border);background:var(--bg-raised);cursor:pointer;text-align:center;transition:all .18s;}
+.theme-card.active{border-color:var(--accent);background:var(--accent-dim);}
+.theme-swatch{width:36px;height:36px;border-radius:50%;margin:0 auto 6px;border:2px solid rgba(255,255,255,.1);}
+.theme-name{font-family:var(--font-mono);font-size:7px;color:var(--text-secondary);letter-spacing:.06em;}
+.theme-card.active .theme-name{color:var(--accent);}
+.danger-row .settings-lbl{color:#ef4444;}
+.supp-setting-row{min-height:48px;display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+.add-supp-row{display:flex;gap:6px;padding:10px 0;flex-wrap:wrap;}
+.add-supp-row input{flex:1;min-width:80px;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;padding:10px 10px;color:var(--text-primary);font-family:var(--font-ui);font-size:13px;outline:none;}
+
+/* ============================================================
+   MODALS
+   ============================================================ */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.8);
+  display:flex;align-items:flex-end;justify-content:center;
+  z-index:1000;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal-sheet{
+  background:var(--bg-surface);border:1px solid var(--border);
+  border-radius:20px 20px 0 0;border-bottom:none;
+  width:100%;max-width:580px;max-height:90vh;overflow-y:auto;
+  padding:20px 16px calc(20px + var(--safe-bottom));
+  animation:sheetUp .3s cubic-bezier(.34,1.56,.64,1);
+}
+.modal-sheet::-webkit-scrollbar{display:none;}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-grip{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;}
+.modal-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--gold-bright);letter-spacing:.14em;margin-bottom:4px;}
+.modal-sub{font-family:var(--font-mono);font-size:8px;color:var(--text-secondary);letter-spacing:.1em;margin-bottom:16px;}
+.modal-body{} /* flexible content */
+
+/* Quest detail */
+.qd-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;}
+.qd-title{flex:1;background:none;border:none;border-bottom:1px solid var(--border);color:var(--text-primary);font-family:var(--font-ui);font-size:18px;font-weight:600;padding:8px 4px;outline:none;width:100%;}
+.qd-desc{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;color:var(--text-secondary);font-family:var(--font-ui);font-size:14px;resize:none;outline:none;margin-bottom:12px;min-height:64px;line-height:1.5;}
+.qd-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.qd-field label{display:block;font-family:var(--font-mono);font-size:7px;letter-spacing:.1em;color:var(--text-secondary);text-transform:uppercase;margin-bottom:4px;}
+.qd-field input,.qd-field select{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;padding:10px;color:var(--text-primary);font-family:var(--font-ui);font-size:13px;outline:none;-webkit-appearance:none;}
+.qd-section-label{font-family:var(--font-mono);font-size:8px;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;padding:10px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px;}
+.qd-sub-row{min-height:44px;display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.qd-del{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:6px;font-size:16px;}
+.qd-note{padding:8px;background:var(--bg-raised);border-radius:6px;margin-bottom:5px;}
+.qd-note-text{font-family:var(--font-ui);font-size:13px;color:var(--text-secondary);}
+.qd-note-date{font-family:var(--font-mono);font-size:7px;color:var(--text-muted);margin-top:3px;}
+.qd-add-row{display:flex;gap:8px;margin-bottom:4px;}
+.qd-add-row input{flex:1;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;padding:12px;color:var(--text-primary);font-family:var(--font-ui);font-size:14px;outline:none;}
+.qd-empty{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);padding:8px 0;}
+
+/* PM Debrief */
+.debrief-header{text-align:center;margin-bottom:16px;}
+.debrief-rank{font-family:var(--font-display);font-size:64px;font-weight:900;margin-bottom:4px;}
+.debrief-date{font-family:var(--font-mono);font-size:9px;color:var(--text-secondary);letter-spacing:.12em;}
+.debrief-section{margin-bottom:16px;}
+.debrief-label{font-family:var(--font-mono);font-size:8px;color:var(--text-secondary);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;}
+.debrief-textarea{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;color:var(--text-primary);font-family:var(--font-ui);font-size:14px;resize:none;outline:none;margin-bottom:8px;min-height:52px;line-height:1.5;}
+.debrief-objective{font-family:var(--font-ui);font-size:13px;color:var(--text-secondary);padding:12px;background:var(--bg-raised);border-radius:var(--radius-sm);margin-bottom:14px;line-height:1.5;}
+.rank-selector{display:flex;gap:6px;justify-content:center;margin-bottom:6px;}
+.rank-btn{
+  width:40px;height:40px;border-radius:8px;border:2px solid;
+  background:none;font-family:var(--font-display);font-size:16px;font-weight:900;
+  cursor:pointer;opacity:.3;transition:all .18s;
+}
+.rank-btn.selected{opacity:1;transform:scale(1.12);}
+.rank-hint{font-family:var(--font-mono);font-size:8px;color:var(--text-muted);text-align:center;margin-bottom:14px;}
+
+/* Food form */
+.food-macro-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.food-field label{display:block;font-family:var(--font-mono);font-size:7px;letter-spacing:.1em;color:var(--text-secondary);text-transform:uppercase;margin-bottom:4px;}
+.food-field input{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;padding:12px 10px;color:var(--text-primary);font-family:var(--font-mono);font-size:15px;text-align:center;outline:none;}
+.food-field input:focus{border-color:var(--accent);}
+.food-field.full{grid-column:1/-1;}
+.electrolyte-fields{display:none;}
+.electrolyte-fields.show{display:grid;}
+
+/* Share fullscreen */
+#share-screen{
+  position:fixed;inset:0;background:#000;z-index:5000;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+}
+#share-screen.active{display:flex;}
+#share-img{max-height:88vh;max-width:100vw;object-fit:contain;border-radius:8px;display:block;touch-action:none;}
+.share-hint{font-family:var(--font-mono);font-size:10px;color:rgba(255,255,255,.4);margin-top:12px;letter-spacing:.1em;animation:pulse 1.6s ease infinite;}
+.share-close{position:absolute;top:calc(var(--safe-top) + 12px);right:16px;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+/* Particles */
+.particle{position:fixed;pointer-events:none;z-index:9000;font-size:18px;animation:particleUp .8s ease-out forwards;}
+@keyframes particleUp{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-60px) scale(.2);opacity:0}}
+
+/* Misc */
+.hidden{display:none!important;}
+.divider{height:1px;background:var(--border);margin:4px 16px;opacity:.4;}
+.time-block-timer-input{display:flex;gap:8px;margin-bottom:8px;}
+</style>
 </head>
 <body>
 
 <!-- ============================================================
      BOOT SCREEN
      ============================================================ -->
-<div id="boot-screen" class="boot-screen">
+<div id="boot-screen">
   <div class="boot-content">
     <div class="boot-hex">⬡</div>
-    <div class="boot-name">SYSTEM OS</div>
-    <div class="boot-ver">v0.2 · MAIN QUEST SYSTEM</div>
+    <div class="boot-title">SYSTEM OS</div>
+    <div class="boot-ver">v0.3 · MAIN QUEST SYSTEM</div>
     <div class="boot-bar"><div class="boot-bar-fill"></div></div>
-    <div class="boot-status">INITIALIZING...</div>
+    <div class="boot-status" id="boot-status">LOADING...</div>
   </div>
 </div>
 
 <!-- ============================================================
      ONBOARDING
      ============================================================ -->
-<div id="onboarding-screen" class="onboarding-screen hidden">
-  <div class="onboarding-card">
-    <div class="onboarding-dots">
-      <div class="onboarding-dot active"></div>
-      <div class="onboarding-dot"></div>
-      <div class="onboarding-dot"></div>
+<div id="onboarding" class="hidden">
+  <div class="ob-card">
+    <div class="ob-dots">
+      <div class="ob-dot active"></div>
+      <div class="ob-dot"></div>
+      <div class="ob-dot"></div>
     </div>
 
-    <div class="onboarding-step active">
-      <div class="onboarding-title">CALLSIGN</div>
-      <div class="onboarding-sub">WHAT DO YOU GO BY?</div>
-      <input id="ob-name" class="onboarding-input" type="text" placeholder="Your name..." autocomplete="off" />
-      <button class="onboarding-btn" onclick="nextOnboardingStep()">CONFIRM →</button>
+    <div class="ob-step active">
+      <div class="ob-title">CALLSIGN</div>
+      <div class="ob-sub">WHAT DO YOU GO BY?</div>
+      <input id="ob-name" class="input" type="text" placeholder="Your name, Player..." autocomplete="off"/>
+      <br><br>
+      <button class="btn-primary" onclick="nextOnboarding()">CONFIRM →</button>
     </div>
 
-    <div class="onboarding-step">
-      <div class="onboarding-title">MAIN QUEST</div>
-      <div class="onboarding-sub">YOUR DEFINING OBJECTIVE</div>
-      <input id="ob-quest" class="onboarding-input" type="text" placeholder="e.g. Get to 185 lbs by Aug 1..." autocomplete="off" />
-      <button class="onboarding-btn" onclick="nextOnboardingStep()">CONFIRM →</button>
+    <div class="ob-step">
+      <div class="ob-title">MAIN OBJECTIVE</div>
+      <div class="ob-sub">YOUR SINGLE MOST IMPORTANT GOAL RIGHT NOW</div>
+      <input id="ob-objective" class="input" type="text" placeholder="e.g. Get to 185 lbs by August..." autocomplete="off"/>
+      <div class="ob-note">Break it into actionable chunks later in the Quest tab.<br>This will be your north star in PM Debrief.</div>
+      <br>
+      <button class="btn-primary" onclick="nextOnboarding()">CONFIRM →</button>
     </div>
 
-    <div class="onboarding-step">
-      <div class="onboarding-title">WAKE TIME</div>
-      <div class="onboarding-sub">MORNING LOG REMINDER</div>
-      <input id="ob-wake" class="onboarding-input" type="time" value="07:00" />
-      <button class="onboarding-btn" onclick="nextOnboardingStep()">ENTER THE SYSTEM →</button>
+    <div class="ob-step">
+      <div class="ob-title">WAKE TIME</div>
+      <div class="ob-sub">WHEN DO YOU START YOUR DAY?</div>
+      <input id="ob-wake" class="input" type="time" value="07:00"/>
+      <br><br>
+      <button class="btn-primary" onclick="nextOnboarding()">ENTER THE SYSTEM →</button>
     </div>
   </div>
 </div>
 
 <!-- ============================================================
-     MOBILE APP
+     APP SHELL
      ============================================================ -->
 <div id="app">
 
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="topbar-brand">
-      <div class="topbar-name">SYSTEM OS</div>
-      <div class="topbar-date" id="topbar-date">MON, JAN 1</div>
+      <div class="topbar-brand-name">SYSTEM OS</div>
     </div>
+    <!-- Rest timer -->
+    <div id="rest-timer-bar">
+      <div id="rest-timer-fill" style="width:100%"></div>
+    </div>
+    <div id="rest-timer-text" style="display:none"></div>
     <div class="topbar-right">
-      <div class="streak-pill">
-        <span>🔥</span>
-        <span class="streak-num" id="streak-num">0</span>
-      </div>
-      <div class="rank-chip" id="topbar-rank">—</div>
-      <div class="sync-dot" id="sync-dot" title="Sync status"></div>
+      <div class="streak-pill">🔥 <span id="topbar-streak">0</span></div>
+      <div class="topbar-rank" id="topbar-rank" onclick="openPMDebrief()" title="Open PM Debrief">—</div>
+      <div class="sync-dot" id="sync-dot" data-status="synced"></div>
     </div>
-  </div>
-
-  <!-- ALARM BANNER -->
-  <div class="alarm-banner" id="alarm-banner">
-    <div class="alarm-icon" id="alarm-icon">🌅</div>
-    <div class="alarm-text">
-      <div class="alarm-title" id="alarm-title">MORNING LOG</div>
-      <div class="alarm-sub" id="alarm-sub">Weight · Intention</div>
-    </div>
-    <button class="alarm-open-btn" id="alarm-open-btn">OPEN</button>
-    <button id="alarm-close-btn" onclick="hideAlarm()" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;padding:4px 8px;line-height:1;-webkit-tap-highlight-color:transparent;">×</button>
   </div>
 
   <!-- MAIN CONTENT -->
-  <div id="main-content">
+  <div id="main">
 
-    <!-- ══════════════════════════════════════════
-         DAILY QUESTS
-         ══════════════════════════════════════════ -->
-    <div id="section-daily" class="section active">
-      <div class="section-header">
-        <div class="section-title">DAILY QUESTS</div>
-        <button class="section-action" onclick="openEveningPrompt()">DEBRIEF</button>
+    <!-- ═══════════════════════════════════════════
+         DAILY
+         ═══════════════════════════════════════════ -->
+    <div id="sec-daily" class="section">
+
+      <div class="daily-date-nav">
+        <button class="date-nav-btn" id="daily-prev-date" onclick="navDate(-1)">‹</button>
+        <div class="date-nav-label t-label" id="daily-date">TODAY</div>
+        <button class="date-nav-btn hidden" id="daily-next-date" onclick="navDate(1)">›</button>
       </div>
 
-      <!-- Date nav -->
-      <div class="date-nav">
-        <button class="date-nav-btn" onclick="navDailyDate(-1)">‹</button>
-        <div>
-          <div class="date-nav-label" id="daily-date-label">TODAY</div>
-        </div>
-        <button class="date-nav-btn" onclick="navDailyDate(1)">›</button>
-        <button id="daily-today-btn" class="date-nav-today-btn" onclick="currentDailyDate=todayKey();renderDaily()" style="display:none;">NOW</button>
-      </div>
-
-      <!-- Hero: rank + progress -->
+      <!-- Hero: weight + rank -->
       <div class="daily-hero">
-        <div class="rank-display" id="daily-rank-display">—</div>
-        <div class="hero-info">
-          <div class="progress-label">QUEST PROGRESS</div>
-          <div class="progress-track"><div class="progress-fill" id="daily-progress-fill" style="width:0%"></div></div>
-          <div class="completion-text" id="daily-completion-text">0 / 6</div>
+        <div class="daily-rank-wrap" id="daily-rank" onclick="openPMDebrief()">—</div>
+        <div class="daily-hero-info">
+          <div class="daily-weight-wrap">
+            <div class="daily-weight-label t-label">WEIGHT</div>
+            <input id="daily-weight-input" class="daily-weight-input" type="number" step="0.1" min="0"
+              placeholder="0.0"
+              onchange="logWeight(currentDate,+this.value);updateRankDisplay(getDay(currentDate))"
+              onblur="logWeight(currentDate,+this.value);renderDaily()"/>
+            <div class="daily-weight-label t-label" id="body-weight-unit-label">lbs</div>
+          </div>
+          <div class="daily-progress-label t-label">QUEST PROGRESS</div>
+          <div class="daily-progress-track">
+            <div class="daily-progress-fill" id="daily-progress-fill" style="width:0%"></div>
+          </div>
         </div>
-      </div>
-
-      <!-- Rest day -->
-      <div class="rest-day-banner" id="rest-day-banner" style="display:none;">
-        <span>❄ REST DAY — Training auto-completed</span>
-        <button onclick="setDailyRestDay(false)" style="background:none;border:none;color:var(--text-muted);font-size:13px;cursor:pointer;">×</button>
-      </div>
-
-      <!-- Intention card -->
-      <div class="intention-card" onclick="openMorningPrompt()">
-        <div class="intention-label">TODAY'S INTENTION</div>
-        <div class="intention-text" id="daily-intention-text">Tap to log...</div>
       </div>
 
       <!-- Core quests -->
-      <div class="quest-list">
+      <div class="quest-rows">
 
         <!-- Sleep -->
-        <div class="quest-item" id="sq-sleep">
-          <div class="q-inner">
-            <div class="q-check" onclick="toggleCoreQuest('sleep')"></div>
-            <div class="q-info" onclick="toggleCoreQuest('sleep')">
-              <div class="q-name">SLEEP</div>
-              <div class="q-meta" id="sleep-meta">GOAL: 6.5–10 hrs</div>
-            </div>
-            <div class="q-stepper" onclick="event.stopPropagation()">
-              <button class="step-btn" onclick="sleepStep(-0.5)">−</button>
-              <div class="step-val" id="sleep-val" style="font-family:var(--font-mono);font-size:13px;color:var(--text-primary);min-width:44px;text-align:center;">0h</div>
-              <button class="step-btn" onclick="sleepStep(0.5)">+</button>
-            </div>
+        <div class="quest-row" id="check-sleep" onclick="openSleepInput()">
+          <div class="quest-dot" id="dot-sleep"></div>
+          <div class="quest-row-info">
+            <div class="quest-row-name">SLEEP</div>
+            <div class="quest-row-sub" id="sleep-sub">Goal: <span id="sleep-goal-label">7</span>h</div>
           </div>
+          <div class="quest-row-val" id="check-sleep-val">—</div>
+        </div>
+
+        <!-- Calories — taps to nutrition -->
+        <div class="quest-row link-row" id="check-cals" onclick="nav('nutrition')">
+          <div class="quest-dot" id="dot-cals"></div>
+          <div class="quest-row-info">
+            <div class="quest-row-name">CALORIES</div>
+            <div class="quest-row-sub">Goal: ≤ <span id="cal-goal-label">2400</span> kcal · Tap to log</div>
+          </div>
+          <div class="quest-row-val" id="daily-cals-val">—</div>
+        </div>
+
+        <!-- Protein — taps to nutrition -->
+        <div class="quest-row link-row" id="check-protein" onclick="nav('nutrition')">
+          <div class="quest-dot" id="dot-protein"></div>
+          <div class="quest-row-info">
+            <div class="quest-row-name">PROTEIN</div>
+            <div class="quest-row-sub">Goal: ≥ <span id="prot-goal-label">175</span>g · Tap to log</div>
+          </div>
+          <div class="quest-row-val" id="daily-protein-val">—</div>
         </div>
 
         <!-- Steps -->
-        <div class="quest-item" id="sq-steps">
-          <div class="q-inner">
-            <div class="q-check"></div>
-            <div class="q-info">
-              <div class="q-name">STEPS</div>
-              <div class="q-meta" style="font-family:var(--font-mono);font-size:8px;color:var(--text-secondary);">GOAL: 10k</div>
-            </div>
-            <div class="q-stepper">
-              <button class="step-btn" onclick="event.stopPropagation();stepperChange('steps',-1,1000)">−</button>
-              <div class="step-val" style="font-family:var(--font-mono);font-size:13px;color:var(--text-primary);min-width:44px;text-align:center;">0</div>
-              <button class="step-btn" onclick="event.stopPropagation();stepperChange('steps',1,1000)">+</button>
-            </div>
+        <div class="quest-row" id="check-steps" onclick="openStepsInput()">
+          <div class="quest-dot" id="dot-steps"></div>
+          <div class="quest-row-info">
+            <div class="quest-row-name">STEPS</div>
+            <div class="quest-row-sub">Goal: <span id="steps-goal-label">10,000</span></div>
           </div>
+          <div class="quest-row-val" id="check-steps-val">—</div>
         </div>
 
-        <!-- Calories (manual input) -->
-        <div class="quest-item" id="sq-calories">
-          <div class="q-inner">
-            <div class="q-check"></div>
-            <div class="q-info">
-              <div class="q-name">CALORIES</div>
-              <div class="q-meta">GOAL: ≤ 2400</div>
-            </div>
-            <div class="q-manual" onclick="event.stopPropagation()">
-              <input id="cal-input" class="q-manual-input" type="number" placeholder="0" min="0" step="1"
-                onkeydown="if(event.key==='Enter')commitManualInput('calories','cal-input')" />
-              <div class="q-manual-unit">kcal</div>
-              <button class="q-manual-ok" onclick="commitManualInput('calories','cal-input')">SET</button>
-            </div>
+        <!-- Trained — auto from training tab -->
+        <div class="quest-row" id="check-trained" onclick="nav('training')">
+          <div class="quest-dot" id="dot-trained"></div>
+          <div class="quest-row-info">
+            <div class="quest-row-name">TRAINED</div>
+            <div class="quest-row-sub">Auto — log a session to check</div>
           </div>
+          <div class="quest-row-val" id="check-trained-val">—</div>
         </div>
 
-        <!-- Protein (manual input) -->
-        <div class="quest-item" id="sq-protein">
-          <div class="q-inner">
-            <div class="q-check"></div>
-            <div class="q-info">
-              <div class="q-name">PROTEIN</div>
-              <div class="q-meta">GOAL: ≥ 175g</div>
-            </div>
-            <div class="q-manual" onclick="event.stopPropagation()">
-              <input id="prot-input" class="q-manual-input" type="number" placeholder="0" min="0" step="1"
-                onkeydown="if(event.key==='Enter')commitManualInput('protein','prot-input')" />
-              <div class="q-manual-unit">g</div>
-              <button class="q-manual-ok" onclick="commitManualInput('protein','prot-input')">SET</button>
-            </div>
+        <!-- Tracking -->
+        <div class="quest-row" id="check-tracking" onclick="toggleTracking()">
+          <div class="quest-dot" id="dot-tracking"></div>
+          <div class="quest-row-info">
+            <div class="quest-row-name">TRACKING</div>
+            <div class="quest-row-sub">Toggle to activate PM Debrief</div>
           </div>
+          <div class="quest-row-val" id="check-tracking-val">OFF</div>
         </div>
 
-        <!-- Trained -->
-        <div class="quest-item" id="sq-trained" onclick="toggleCoreQuest('trained')">
-          <div class="q-inner">
-            <div class="q-check"></div>
-            <div class="q-info">
-              <div class="q-name">TRAINED</div>
-              <div class="q-meta">CORE QUEST</div>
-            </div>
-            <span style="font-size:22px;">💪</span>
-          </div>
-        </div>
+      </div><!-- /quest-rows -->
 
-        <!-- Main Quest -->
-        <div class="quest-item" id="sq-mainquest" onclick="toggleCoreQuest('mainQuest')">
-          <div class="q-inner">
-            <div class="q-check"></div>
-            <div class="q-info">
-              <div class="q-name">MAIN QUEST</div>
-              <div class="q-meta" id="main-quest-label">CORE OBJECTIVE</div>
-            </div>
-            <span style="font-size:22px;">⚔</span>
-          </div>
-        </div>
-
-      </div><!-- /quest-list -->
-
-      <!-- Side quests -->
-      <div class="side-quest-header">
-        <div class="side-quest-label">SIDE QUESTS</div>
-        <button class="section-action" onclick="openModal('custom-quest-modal')">+ ADD</button>
+      <!-- Upcoming quests -->
+      <div class="section-hdr">
+        <div class="section-title">UPCOMING QUESTS</div>
+        <button class="btn-ghost small" onclick="nav('quests')">View All</button>
       </div>
-      <div class="quest-list" id="custom-quests-list" style="padding-bottom:0;"></div>
-
-      <!-- Action row -->
-      <div class="action-btn-row">
-        <button class="action-btn" onclick="openMorningPrompt()">🌅 MORNING</button>
-        <button class="action-btn gold" onclick="setDailyRestDay()">❄ REST DAY</button>
-        <button class="action-btn" onclick="ExportEngine.showFullScreen(state.settings.shareWeight)">📸 STORY</button>
+      <div class="upcoming-section">
+        <div id="daily-upcoming"></div>
       </div>
 
-      <div style="height:8px;"></div>
-    </div><!-- /section-daily -->
-
-    <!-- ══════════════════════════════════════════
-         QUEST LOG
-         ══════════════════════════════════════════ -->
-    <div id="section-quests" class="section">
-      <!-- Karma bar -->
-      <div style="padding:8px 13px 4px;">
-        <div id="karma-bar" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 11px;"></div>
+      <!-- Actions -->
+      <div class="daily-actions">
+        <button class="share-btn" onclick="showShareFullscreen(false)">📸 STORY</button>
+        <button class="share-btn" style="background:none;border:1px solid var(--border);" onclick="showShareFullscreen(true)">⬜ OVERLAY</button>
       </div>
 
-      <!-- Input -->
-      <div class="quest-input-wrap">
-        <input id="quest-input" class="quest-input" type="text" placeholder="Add quest... 'fix bug tomorrow @work !1 every week'" autocomplete="off"
-          oninput="handleQuestInput(this.value)"
-          onkeydown="if(event.key==='Enter')addQuest(currentProject)" />
-        <button class="quest-add-btn" onclick="addQuest(currentProject)">+</button>
-      </div>
-      <div id="nlp-hint" class="nlp-hint"></div>
+    </div><!-- /sec-daily -->
 
-      <!-- Two-column: sidebar + items -->
-      <div style="display:flex;gap:0;flex:1;overflow:hidden;">
-        <!-- Project sidebar -->
-        <div id="project-list" style="width:130px;flex-shrink:0;padding:6px 8px;border-right:1px solid var(--border);overflow-y:auto;max-height:calc(100vh - 220px);"></div>
-        <!-- Quest items -->
-        <div id="quest-items" style="flex:1;padding:8px 10px;overflow-y:auto;max-height:calc(100vh - 220px);"></div>
+    <!-- ═══════════════════════════════════════════
+         QUESTS
+         ═══════════════════════════════════════════ -->
+    <div id="sec-quests" class="section">
+      <div style="display:flex;height:calc(100vh - var(--topbar-h) - var(--nav-h) - var(--safe-top) - max(var(--safe-bottom),8px) - 80px);overflow:hidden;">
+        <!-- Sidebar -->
+        <div id="quest-sidebar" class="quest-sidebar"></div>
+        <!-- Quest list -->
+        <div id="quest-list" class="quest-main"></div>
       </div>
-    </div><!-- /section-quests -->
+    </div><!-- /sec-quests -->
 
-    <!-- ══════════════════════════════════════════
+    <!-- ═══════════════════════════════════════════
          TRAINING
-         ══════════════════════════════════════════ -->
-    <div id="section-training" class="section">
-      <div class="section-header">
-        <div class="section-title">TRAINING</div>
-        <button class="section-action" onclick="openExModal()">+ EXERCISE</button>
+         ═══════════════════════════════════════════ -->
+    <div id="sec-training" class="section">
+
+      <div class="training-date-nav">
+        <button class="date-nav-btn" onclick="navTraining(-1)">‹</button>
+        <div style="text-align:center;">
+          <div class="date-nav-label t-label" id="training-date">TODAY</div>
+          <div class="session-info">
+            <span class="session-timer">⏱ <span id="session-timer-text">00:00</span></span>
+          </div>
+        </div>
+        <button class="date-nav-btn hidden" id="training-next-date" onclick="navTraining(1)">›</button>
       </div>
 
-      <!-- Date nav -->
-      <div class="date-nav">
-        <button class="date-nav-btn" onclick="navTrainingDate(-1)">‹</button>
-        <div class="date-nav-label" id="training-date-label">TODAY</div>
-        <button class="date-nav-btn" onclick="navTrainingDate(1)">›</button>
-        <button id="training-today-btn" class="date-nav-today-btn" onclick="currentTrainingDate=todayKey();renderTraining()" style="display:none;">NOW</button>
-      </div>
+      <!-- Muscle heatmap -->
+      <div id="muscle-heatmap" class="muscle-heatmap"></div>
 
-      <!-- Split filter -->
-      <div class="split-row" id="split-chips"></div>
+      <!-- Training actions -->
+      <div class="training-actions">
+        <button class="btn-ghost" onclick="openModal('modal-add-exercise')">+ Exercise</button>
+        <button class="btn-ghost" id="copy-session-btn" onclick="copyLastSession()" style="display:none;">↩ Copy Last</button>
+      </div>
 
       <!-- Exercise list -->
-      <div style="padding:0 13px;" id="exercise-list"></div>
+      <div id="exercise-list" class="exercise-list"></div>
 
-      <button class="add-ex-btn" onclick="openExModal()">+ ADD EXERCISE</button>
-    </div><!-- /section-training -->
+    </div><!-- /sec-training -->
 
-    <!-- ══════════════════════════════════════════
+    <!-- ═══════════════════════════════════════════
          NUTRITION
-         ══════════════════════════════════════════ -->
-    <div id="section-nutrition" class="section">
-      <div class="section-header">
-        <div class="section-title">NUTRITION</div>
-        <button class="section-action" onclick="openModal('food-modal')">+ FOOD</button>
+         ═══════════════════════════════════════════ -->
+    <div id="sec-nutrition" class="section">
+
+      <!-- Totals -->
+      <div class="nut-totals">
+        <div class="nut-totals-grid">
+          <div class="nut-stat">
+            <div class="nut-val" id="nut-cals-total">0</div>
+            <div class="nut-lbl">KCAL</div>
+          </div>
+          <div class="nut-stat">
+            <div class="nut-val" id="nut-protein-total">0g</div>
+            <div class="nut-lbl">PROTEIN</div>
+          </div>
+          <div class="nut-stat">
+            <div class="nut-val" id="nut-carbs-total">0g</div>
+            <div class="nut-lbl">CARBS</div>
+          </div>
+          <div class="nut-stat">
+            <div class="nut-val" id="nut-fat-total">0g</div>
+            <div class="nut-lbl">FAT</div>
+          </div>
+        </div>
+        <div class="nut-bar-row">
+          <div class="nut-bar-label">Calories</div>
+          <div class="nut-bar-track"><div class="nut-bar-fill cal" id="nut-cal-bar" style="width:0%"></div></div>
+        </div>
+        <div class="nut-bar-row">
+          <div class="nut-bar-label">Protein</div>
+          <div class="nut-bar-track"><div class="nut-bar-fill prot" id="nut-prot-bar" style="width:0%"></div></div>
+        </div>
+        <div class="nut-tdee" id="nut-tdee"></div>
       </div>
 
-      <!-- Macro grid -->
-      <div class="nut-grid">
-        <div class="nut-stat">
-          <div class="nut-val" id="nut-cal">0</div>
-          <div class="nut-lbl">KCAL</div>
+      <!-- Meals -->
+      <div id="meal-breakfast" class="meal-section">
+        <div class="meal-header" onclick="toggleMeal('breakfast')">
+          <div class="meal-name">🌅 Breakfast</div>
+          <div class="meal-cal-count" id="meal-cal-breakfast"></div>
+          <button class="meal-add-btn" onclick="event.stopPropagation();openAddFood('breakfast')">+</button>
         </div>
-        <div class="nut-stat">
-          <div class="nut-val" id="nut-protein">0g</div>
-          <div class="nut-lbl">PROTEIN</div>
-        </div>
-        <div class="nut-stat">
-          <div class="nut-val" id="nut-carbs">0g</div>
-          <div class="nut-lbl">CARBS</div>
-        </div>
-        <div class="nut-stat">
-          <div class="nut-val" id="nut-fat">0g</div>
-          <div class="nut-lbl">FAT</div>
-        </div>
+        <div class="meal-items" id="meal-items-breakfast"></div>
       </div>
 
-      <!-- Macro bars -->
-      <div class="macro-bars">
-        <div class="macro-row">
-          <div class="macro-lbl">PROTEIN</div>
-          <div class="macro-track"><div class="macro-fill p" id="bar-protein" style="width:0%"></div></div>
+      <div id="meal-lunch" class="meal-section">
+        <div class="meal-header" onclick="toggleMeal('lunch')">
+          <div class="meal-name">☀️ Lunch</div>
+          <div class="meal-cal-count" id="meal-cal-lunch"></div>
+          <button class="meal-add-btn" onclick="event.stopPropagation();openAddFood('lunch')">+</button>
         </div>
-        <div class="macro-row">
-          <div class="macro-lbl">CARBS</div>
-          <div class="macro-track"><div class="macro-fill c" id="bar-carbs" style="width:0%"></div></div>
-        </div>
-        <div class="macro-row">
-          <div class="macro-lbl">FAT</div>
-          <div class="macro-track"><div class="macro-fill f" id="bar-fat" style="width:0%"></div></div>
-        </div>
+        <div class="meal-items" id="meal-items-lunch"></div>
       </div>
 
-      <!-- TDEE card -->
-      <div class="tdee-card" id="tdee-card" style="display:none;">
-        <div class="tdee-title">TDEE ESTIMATE (from data)</div>
-        <div class="tdee-row"><div class="tdee-key">Est. TDEE</div><div class="tdee-val" id="tdee-val">—</div></div>
-        <div class="tdee-row"><div class="tdee-key">Avg Calories</div><div class="tdee-val" id="tdee-avg-cal">—</div></div>
-        <div class="tdee-row"><div class="tdee-key">Weight change/wk</div><div class="tdee-val" id="tdee-wt-change">—</div></div>
-        <div class="tdee-row"><div class="tdee-key">Data points</div><div class="tdee-val" id="tdee-data-pts">—</div></div>
+      <div id="meal-dinner" class="meal-section">
+        <div class="meal-header" onclick="toggleMeal('dinner')">
+          <div class="meal-name">🌙 Dinner</div>
+          <div class="meal-cal-count" id="meal-cal-dinner"></div>
+          <button class="meal-add-btn" onclick="event.stopPropagation();openAddFood('dinner')">+</button>
+        </div>
+        <div class="meal-items" id="meal-items-dinner"></div>
+      </div>
+
+      <div id="meal-snacks" class="meal-section">
+        <div class="meal-header" onclick="toggleMeal('snacks')">
+          <div class="meal-name">🍎 Snacks</div>
+          <div class="meal-cal-count" id="meal-cal-snacks"></div>
+          <button class="meal-add-btn" onclick="event.stopPropagation();openAddFood('snacks')">+</button>
+        </div>
+        <div class="meal-items" id="meal-items-snacks"></div>
       </div>
 
       <!-- Supplements -->
-      <div class="supp-row">
-        <div class="supp-card">
-          <div class="supp-name">CAFFEINE</div>
-          <div class="supp-ctrl">
-            <button class="supp-btn" onclick="adjustSupp('caffeine',-1)">−</button>
-            <div class="supp-val" id="supp-caffeine">0</div>
-            <button class="supp-btn" onclick="adjustSupp('caffeine',1)">+</button>
-          </div>
-          <div style="font-family:var(--font-mono);font-size:7px;color:var(--text-muted);text-align:center;margin-top:3px;">mg · ±25</div>
-        </div>
-        <div class="supp-card">
-          <div class="supp-name">CREATINE</div>
-          <div class="supp-ctrl">
-            <button class="supp-btn" onclick="adjustSupp('creatine',-1)">−</button>
-            <div class="supp-val" id="supp-creatine">0</div>
-            <button class="supp-btn" onclick="adjustSupp('creatine',1)">+</button>
-          </div>
-          <div style="font-family:var(--font-mono);font-size:7px;color:var(--text-muted);text-align:center;margin-top:3px;">g · ±5</div>
-        </div>
+      <div class="section-hdr">
+        <div class="section-title">SUPPLEMENTS</div>
+        <button class="btn-ghost small" onclick="nav('settings')">Manage</button>
+      </div>
+      <div class="supplement-section">
+        <div id="supplement-list"></div>
       </div>
 
-      <!-- Food log -->
-      <div style="padding:0 13px 6px;display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-family:var(--font-mono);font-size:7px;letter-spacing:0.14em;color:var(--gold);text-transform:uppercase;">FOOD LOG</div>
-        <button class="section-action" onclick="openModal('food-modal')">+ ADD</button>
-      </div>
-      <div class="food-list" id="food-list"></div>
-    </div><!-- /section-nutrition -->
+    </div><!-- /sec-nutrition -->
 
-    <!-- ══════════════════════════════════════════
+    <!-- ═══════════════════════════════════════════
          JOURNAL
-         ══════════════════════════════════════════ -->
-    <div id="section-journal" class="section">
-      <div class="section-header">
-        <div class="section-title">JOURNAL</div>
-        <button class="section-action" onclick="openModal('weekly-review-modal')">REVIEW</button>
+         ═══════════════════════════════════════════ -->
+    <div id="sec-journal" class="section">
+
+      <!-- Auto summary -->
+      <div class="journal-day-summary t-label" id="day-summary"></div>
+
+      <!-- Energy -->
+      <div class="energy-section">
+        <div class="energy-label">ENERGY LEVEL</div>
+        <div id="energy-picker" class="energy-row"></div>
       </div>
 
-      <!-- Mood -->
-      <div class="mood-row">
-        <div class="mood-lbl">MOOD:</div>
-        <button class="mood-btn" data-mood="1" onclick="setMood(1)">😔<span>Low</span></button>
-        <button class="mood-btn" data-mood="2" onclick="setMood(2)">😐<span>Neutral</span></button>
-        <button class="mood-btn" data-mood="3" onclick="setMood(3)">😊<span>Good</span></button>
+      <!-- Time tracker -->
+      <div class="time-tracker-section">
+        <div class="time-header">
+          <div class="section-title">TIME TRACKER</div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-ghost small" id="time-start-btn" onclick="openTimeStartModal()">▶ Start</button>
+            <button class="btn-ghost small" id="time-stop-btn" onclick="stopTimeBlock();setText('time-start-btn-text','▶ Start')" style="display:none">■ Stop</button>
+          </div>
+        </div>
+        <div id="time-blocks-list"></div>
       </div>
 
-      <!-- Prompt button -->
-      <button id="open-prompts-btn" class="prompt-btn" onclick="openJournalPrompts()">
-        <span>💭</span> PROMPTED JOURNAL
-      </button>
-
-      <!-- Prompt questions (hidden initially) -->
-      <div id="journal-prompts-section" style="display:none;">
-        <div class="prompt-questions">
-          <div class="prompt-q-card">
-            <div class="prompt-q-label">HOW WAS TODAY?</div>
-            <textarea id="prompt-q1" class="prompt-q-input" placeholder="Give it a rating, a vibe..."></textarea>
+      <!-- Prompted journal -->
+      <div class="journal-prompts">
+        <div class="section-hdr" style="padding:0 0 10px;">
+          <div class="section-title">REFLECTION</div>
+          <button class="btn-ghost small" onclick="togglePrompts()">Prompts</button>
+        </div>
+        <div id="journal-prompts-panel" style="display:none;">
+          <div class="prompt-card">
+            <div class="prompt-label">How was today?</div>
+            <textarea id="journal-how-was-today" class="input" placeholder="Give it a rating, a vibe..." onchange="savePrompt('howWasToday',this.value)"></textarea>
           </div>
-          <div class="prompt-q-card">
-            <div class="prompt-q-label">WHAT HAPPENED?</div>
-            <textarea id="prompt-q2" class="prompt-q-input" placeholder="Key events, moments..."></textarea>
+          <div class="prompt-card">
+            <div class="prompt-label">What happened?</div>
+            <textarea id="journal-what-happened" class="input" placeholder="Key events, moments..." onchange="savePrompt('whatHappened',this.value)"></textarea>
           </div>
-          <div class="prompt-q-card">
-            <div class="prompt-q-label">HOW ARE YOU FEELING ABOUT IT?</div>
-            <textarea id="prompt-q3" class="prompt-q-input" placeholder="Honest reflection..."></textarea>
+          <div class="prompt-card">
+            <div class="prompt-label">How are you feeling about it?</div>
+            <textarea id="journal-how-feeling" class="input" placeholder="Honest reflection..." onchange="savePrompt('howAreYouFeeling',this.value)"></textarea>
           </div>
+        </div>
+        <div class="journal-section">
+          <div class="journal-label">FREE WRITE</div>
+          <textarea id="journal-free" class="input" placeholder="Anything on your mind..." style="min-height:100px;" onchange="saveJournalFree(this.value)"></textarea>
+          <button class="btn-primary" style="margin-top:8px;" onclick="saveJournalEntry()">Save Entry</button>
         </div>
       </div>
 
-      <!-- Free write -->
-      <div class="free-write-label">FREE WRITE</div>
-      <div class="journal-area">
-        <textarea id="journal-free-text" class="journal-textarea" placeholder="Anything else on your mind..."></textarea>
-        <button class="journal-save" onclick="saveJournalEntry()">SAVE ENTRY</button>
+      <!-- Quest log for today -->
+      <div class="journal-quest-log">
+        <div class="section-hdr" style="padding:16px 0 8px;">
+          <div class="section-title">TODAY'S QUEST LOG</div>
+        </div>
+        <div id="journal-quest-log"></div>
       </div>
 
-      <!-- ── DATA VISUALIZATION ── -->
+      <!-- Charts -->
       <div class="chart-section">
-
-        <!-- Weight chart -->
         <div class="chart-card">
-          <div class="chart-title">
-            WEIGHT TRACKING
-            <button class="chart-export-btn" onclick="ExportEngine.exportWeightToFullScreen()">⬆ EXPORT</button>
+          <div class="chart-title">WEIGHT TRACKING
+            <button class="btn-ghost small" onclick="showShareFullscreen(false)">Export</button>
           </div>
-          <div class="chart-period-row">
-            <button class="chart-period-btn" data-period="1M" onclick="setChartPeriod('1M')">1M</button>
-            <button class="chart-period-btn active" data-period="3M" onclick="setChartPeriod('3M')">3M</button>
-            <button class="chart-period-btn" data-period="6M" onclick="setChartPeriod('6M')">6M</button>
-            <button class="chart-period-btn" data-period="1Y" onclick="setChartPeriod('1Y')">1Y</button>
-            <button class="chart-period-btn" data-period="ALL" onclick="setChartPeriod('ALL')">ALL</button>
-          </div>
-          <canvas id="weight-chart-canvas" class="chart-canvas" style="height:200px;"></canvas>
-          <!-- Weight stats grid -->
-          <div class="weight-stats-grid">
-            <div class="wstat"><div class="wstat-label">CURRENT</div><div class="wstat-val" id="wstat-current">—</div></div>
-            <div class="wstat"><div class="wstat-label">30-DAY CHANGE</div><div class="wstat-val" id="wstat-change">—</div></div>
-            <div class="wstat"><div class="wstat-label">WEEKLY TREND</div><div class="wstat-val" id="wstat-trend">—</div></div>
-            <div class="wstat"><div class="wstat-label">GOAL</div><div class="wstat-val" id="wstat-goal">—</div></div>
-            <div class="wstat" style="grid-column:1/-1;"><div class="wstat-label">ETA TO GOAL</div><div class="wstat-val" id="wstat-eta">—</div></div>
-          </div>
+          <canvas id="weight-chart" class="chart-canvas" style="height:180px"></canvas>
         </div>
-
-        <!-- Calories bar chart -->
         <div class="chart-card">
-          <div class="chart-title">CALORIES (14 DAYS)</div>
-          <canvas id="cal-chart-canvas" class="chart-canvas" style="height:160px;"></canvas>
+          <div class="chart-title">WEIGHT × CALORIES (normalised)</div>
+          <canvas id="corr-chart" class="chart-canvas" style="height:160px"></canvas>
         </div>
-
       </div>
 
-      <!-- Divider -->
-      <div style="padding:0 13px 8px;font-family:var(--font-mono);font-size:7px;letter-spacing:0.16em;color:var(--gold);text-transform:uppercase;">
-        RECENT ENTRIES
-      </div>
-      <div class="journal-entries" id="journal-entries-list"></div>
+    </div><!-- /sec-journal -->
 
-    </div><!-- /section-journal -->
-
-    <!-- ══════════════════════════════════════════
+    <!-- ═══════════════════════════════════════════
          SETTINGS
-         ══════════════════════════════════════════ -->
-    <div id="section-settings" class="section">
-      <div class="section-header">
-        <div class="section-title">SETTINGS</div>
-      </div>
+         ═══════════════════════════════════════════ -->
+    <div id="sec-settings" class="section">
 
-      <!-- Profile -->
       <div class="settings-group">
         <div class="settings-group-title">PROFILE</div>
         <div class="settings-row">
           <div><div class="settings-lbl">Callsign</div></div>
-          <input id="set-name" class="settings-inp" type="text" onchange="saveSettingStr('name',this.value)" />
+          <input id="set-name" class="settings-inp wide" type="text" onchange="saveSetting('name',this.value)" placeholder="Your name"/>
         </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">UNITS</div>
         <div class="settings-row">
-          <div><div class="settings-lbl">Body Weight Unit</div><div class="settings-sub">For weight logging</div></div>
+          <div><div class="settings-lbl">Body Weight</div><div class="settings-sub">For daily weight log</div></div>
           <select id="set-body-weight-unit" class="settings-inp" onchange="saveSetting('bodyWeightUnit',this.value)">
             <option value="lbs">lbs</option>
             <option value="kg">kg</option>
           </select>
         </div>
         <div class="settings-row">
-          <div><div class="settings-lbl">Training Weight Unit</div><div class="settings-sub">For gym exercises</div></div>
+          <div><div class="settings-lbl">Training Weight</div><div class="settings-sub">For gym exercises</div></div>
           <select id="set-training-weight-unit" class="settings-inp" onchange="saveSetting('trainingWeightUnit',this.value)">
             <option value="kg">kg</option>
             <option value="lbs">lbs</option>
           </select>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">DAILY GOALS</div>
+        <div class="settings-row">
+          <div><div class="settings-lbl">Calories</div></div>
+          <input id="set-cal-goal" class="settings-inp" type="number" onchange="saveSettingNum('caloriesGoal',this.value)"/>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-lbl">Protein (g)</div></div>
+          <input id="set-prot-goal" class="settings-inp" type="number" onchange="saveSettingNum('proteinGoal',this.value)"/>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-lbl">Steps</div></div>
+          <input id="set-steps-goal" class="settings-inp" type="number" onchange="saveSettingNum('stepsGoal',this.value)"/>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-lbl">Sleep Goal (hrs)</div></div>
+          <input id="set-sleep-goal" class="settings-inp" type="number" step="0.5" onchange="saveSettingNum('sleepGoal',this.value)"/>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-lbl">Training Days/Week</div><div class="settings-sub">For streak calculation</div></div>
+          <input id="set-training-days" class="settings-inp" type="number" min="1" max="7" onchange="saveSettingNum('trainingDaysPerWeek',this.value)"/>
         </div>
         <div class="settings-row">
           <div><div class="settings-lbl">Week Starts On</div></div>
@@ -516,504 +1388,540 @@
         </div>
       </div>
 
-      <!-- Goals -->
       <div class="settings-group">
-        <div class="settings-group-title">DAILY GOALS</div>
+        <div class="settings-group-title">WEIGHT GOAL</div>
         <div class="settings-row">
-          <div><div class="settings-lbl">Calorie Goal</div><div class="settings-sub">Daily cap</div></div>
-          <input id="set-cal-goal" class="settings-inp" type="number" onchange="saveSettingNum('caloriesGoal',this.value)" />
+          <div><div class="settings-lbl">Goal Weight</div></div>
+          <input id="set-weight-goal" class="settings-inp" type="number" step="0.1" placeholder="—" onchange="saveSettingNum('weightGoal',this.value||null)"/>
         </div>
         <div class="settings-row">
-          <div><div class="settings-lbl">Protein Goal</div><div class="settings-sub">Daily minimum (g)</div></div>
-          <input id="set-prot-goal" class="settings-inp" type="number" onchange="saveSettingNum('proteinGoal',this.value)" />
+          <div><div class="settings-lbl">Pace (per week)</div></div>
+          <input id="set-weight-pace" class="settings-inp" type="number" step="0.1" onchange="saveSettingNum('weightPace',this.value)"/>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">TRAINING</div>
+        <div class="settings-row">
+          <div><div class="settings-lbl">Rest Timer Auto-Start</div><div class="settings-sub">Starts when set is marked done</div></div>
+          <div id="tog-rest-auto" class="toggle" onclick="toggleSetting('restTimerAuto',this)"></div>
         </div>
         <div class="settings-row">
-          <div><div class="settings-lbl">Steps Goal</div></div>
-          <input id="set-steps-goal" class="settings-inp" type="number" onchange="saveSettingNum('stepsGoal',this.value)" />
-        </div>
-        <div class="settings-row">
-          <div><div class="settings-lbl">Training Days / Week</div><div class="settings-sub">For streak protection</div></div>
-          <select id="set-training-days" class="settings-inp" onchange="saveSettingNum('trainingDaysPerWeek',this.value)">
-            <option value="3">3 days</option>
-            <option value="4">4 days</option>
-            <option value="5">5 days</option>
-            <option value="6">6 days</option>
-            <option value="7">Every day</option>
+          <div><div class="settings-lbl">Rest Duration (sec)</div></div>
+          <select class="settings-inp" onchange="saveSettingNum('restTimerDuration',this.value)">
+            <option value="60">60s</option>
+            <option value="90">90s</option>
+            <option value="120" selected>2 min</option>
+            <option value="180">3 min</option>
+            <option value="240">4 min</option>
+            <option value="300">5 min</option>
           </select>
         </div>
-        <div class="settings-row">
-          <div><div class="settings-lbl">Cal/Protein Input Mode</div><div class="settings-sub">Manual in Daily Quest, or sync from Food tab</div></div>
-          <div id="toggle-cal-sync" class="toggle" onclick="toggleCalSyncMode(this)"><div class="toggle-knob"></div></div>
-        </div>
-        <div style="padding:2px 12px 8px;font-family:var(--font-mono);font-size:8px;color:var(--text-muted);" id="cal-sync-hint">
-          OFF = manual entry in Daily Quest · ON = syncs from Food tab only
-        </div>
       </div>
 
-      <!-- Weight Goal -->
       <div class="settings-group">
-        <div class="settings-group-title">WEIGHT GOAL (optional)</div>
+        <div class="settings-group-title">NUTRITION</div>
         <div class="settings-row">
-          <div><div class="settings-lbl">Goal Weight</div><div class="settings-sub">Target body weight</div></div>
-          <input id="set-weight-goal" class="settings-inp" type="number" step="0.1" placeholder="—" onchange="saveSettingNum('weightGoal',this.value||null)" />
+          <div><div class="settings-lbl">Electrolyte Mode</div><div class="settings-sub">Track Na/K/Zn/Mg per food</div></div>
+          <div id="tog-electrolyte" class="toggle" onclick="toggleSetting('electrolyteMode',this)"></div>
         </div>
         <div class="settings-row">
-          <div><div class="settings-lbl">Deadline</div><div class="settings-sub">Target date (optional)</div></div>
-          <input id="set-weight-deadline" class="settings-inp" type="date" onchange="saveSettingStr('weightDeadline',this.value||null)" />
-        </div>
-        <div class="settings-row">
-          <div><div class="settings-lbl">OR Pace</div><div class="settings-sub">lbs or kg per week</div></div>
-          <input id="set-weight-pace" class="settings-inp" type="number" step="0.1" min="0" onchange="saveSettingNum('weightLossPace',this.value)" />
+          <div><div class="settings-lbl">Calorie Badge on Nav</div><div class="settings-sub">Shows daily total on Food icon</div></div>
+          <div id="tog-cal-badge" class="toggle" onclick="toggleSetting('calBadgeEnabled',this)"></div>
         </div>
       </div>
 
-      <!-- Alarms -->
       <div class="settings-group">
-        <div class="settings-group-title">ALARMS</div>
-        <div class="settings-row">
-          <div><div class="settings-lbl">Morning Log</div><div class="settings-sub">Weight + intention prompt</div></div>
-          <input id="set-wake-time" class="settings-inp" type="time" onchange="saveSettingStr('wakeTime',this.value)" />
-        </div>
-        <div class="settings-row">
-          <div><div class="settings-lbl">Evening Debrief</div><div class="settings-sub">Rank the day</div></div>
-          <input id="set-evening-time" class="settings-inp" type="time" onchange="saveSettingStr('eveningTime',this.value)" />
-        </div>
+        <div class="settings-group-title">SUPPLEMENTS</div>
+        <div id="supplement-settings-list"></div>
       </div>
 
-      <!-- Supabase -->
-      <div class="settings-group">
-        <div class="settings-group-title">CLOUD SYNC (SUPABASE)</div>
-        <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px;">
-          <div class="settings-lbl">Project URL</div>
-          <input class="settings-inp" type="text" placeholder="https://xxx.supabase.co" style="width:100%;text-align:left;"
-            value="" id="set-sb-url" onchange="saveSettingStr('supabaseUrl',this.value);initSupabase()" />
-        </div>
-        <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px;">
-          <div class="settings-lbl">Anon Key</div>
-          <input class="settings-inp" type="password" placeholder="eyJ..." style="width:100%;text-align:left;"
-            value="" id="set-sb-key" onchange="saveSettingStr('supabaseKey',this.value);initSupabase()" />
-        </div>
-        <div style="padding:6px 12px;font-family:var(--font-mono);font-size:8px;color:var(--text-muted);">
-          Walk-through available — ask System OS for setup guide
-        </div>
-      </div>
-
-      <!-- App -->
       <div class="settings-group">
         <div class="settings-group-title">APP</div>
         <div class="settings-row">
           <div><div class="settings-lbl">Sound Effects</div></div>
-          <div id="toggle-sounds" class="toggle" onclick="toggleSetting('sounds',this)"><div class="toggle-knob"></div></div>
+          <div id="tog-sounds" class="toggle" onclick="toggleSetting('sounds',this)"></div>
         </div>
         <div class="settings-row">
-          <div><div class="settings-lbl">Share Weight in Story</div><div class="settings-sub">Include in export card</div></div>
-          <div id="toggle-share-weight" class="toggle" onclick="toggleSetting('shareWeight',this)"><div class="toggle-knob"></div></div>
+          <div><div class="settings-lbl">Share Weight in Story</div></div>
+          <div id="tog-share-weight" class="toggle" onclick="toggleSetting('shareWeight',this)"></div>
         </div>
         <div class="settings-row">
-          <div><div class="settings-lbl">Desktop Mode</div><div class="settings-sub">Floating panels UI</div></div>
-          <button class="section-action" onclick="switchLayout('desktop')">SWITCH</button>
+          <div><div class="settings-lbl">Karma / XP System</div><div class="settings-sub">Hidden — future character feature</div></div>
+          <div id="tog-karma" class="toggle" onclick="toggleSetting('karmaEnabled',this)"></div>
         </div>
       </div>
 
-      <!-- Themes -->
+      <div class="settings-group">
+        <div class="settings-group-title">CLOUD SYNC</div>
+        <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px;min-height:auto;padding:14px 12px;">
+          <div class="settings-lbl">Supabase URL</div>
+          <input id="set-sb-url" class="settings-inp wide" style="width:100%;text-align:left;" type="text" placeholder="https://xxx.supabase.co" onchange="saveSetting('supabaseUrl',this.value)"/>
+        </div>
+        <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:6px;min-height:auto;padding:14px 12px;">
+          <div class="settings-lbl">Anon Key</div>
+          <input id="set-sb-key" class="settings-inp wide" style="width:100%;text-align:left;" type="password" placeholder="eyJ..." onchange="saveSetting('supabaseKey',this.value)"/>
+        </div>
+      </div>
+
       <div class="settings-group">
         <div class="settings-group-title">THEME</div>
       </div>
-      <div class="theme-grid" id="theme-grid"></div>
+      <div id="theme-grid" class="theme-grid"></div>
 
-      <!-- Export -->
-      <div class="settings-group">
-        <div class="settings-group-title">EXPORT DATA</div>
-        <div class="settings-row">
-          <div><div class="settings-lbl">Export to CSV</div><div class="settings-sub">Opens in Google Sheets or Excel</div></div>
-          <button class="section-action" onclick="SheetsExport.exportCSV(parseInt(document.getElementById('export-range').value))">↓ CSV</button>
-        </div>
-        <div class="settings-row">
-          <div><div class="settings-lbl">Export range</div></div>
-          <select id="export-range" class="settings-inp">
-            <option value="30">30 days</option>
-            <option value="90" selected>90 days</option>
-            <option value="180">6 months</option>
-            <option value="365">1 year</option>
-            <option value="9999">All time</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Character Sheet (future) -->
-      <div class="settings-group">
-        <div class="settings-group-title">CHARACTER SHEET <span style="font-size:8px;color:var(--text-muted);letter-spacing:0.05em;">COMING SOON</span></div>
-        <div class="settings-row" style="opacity:0.5;pointer-events:none;">
-          <div>
-            <div class="settings-lbl">Avatar & Class</div>
-            <div class="settings-sub">RPG character customization</div>
-          </div>
-          <span style="font-size:20px;">⚔🛡</span>
-        </div>
-        <div class="settings-row" style="opacity:0.5;pointer-events:none;">
-          <div>
-            <div class="settings-lbl">Stats & XP</div>
-            <div class="settings-sub">STR · AGI · VIT · INT · WIS</div>
-          </div>
-          <span style="font-size:20px;">📊</span>
-        </div>
-        <div style="padding:4px 12px 10px;font-family:var(--font-mono);font-size:8px;color:var(--text-muted);line-height:1.6;">
-          Each module will feed a stat: Training → STR, Steps → AGI, Sleep → VIT, Nutrition → END, Journal → WIS. Habitica-style avatar unlocks based on streak milestones.
-        </div>
-      </div>
-
-      <!-- DANGER ZONE -->
       <div class="settings-group">
         <div class="settings-group-title">DANGER ZONE</div>
-        <div class="settings-row danger-row" onclick="if(confirm('Reset ALL data? This cannot be undone.')){localStorage.clear();location.reload();}">
-          <div class="settings-lbl danger-lbl">Reset All Data</div>
-          <span style="color:var(--danger);">⚠</span>
+        <div class="settings-row danger-row" onclick="if(confirm('Reset ALL data? Cannot be undone.')){localStorage.removeItem('sos_v3');location.reload();}">
+          <div class="settings-lbl">Reset All Data</div>
+          <span>⚠</span>
+        </div>
+        <div class="settings-row" onclick="exportCSV()">
+          <div><div class="settings-lbl">Export to CSV</div><div class="settings-sub">Download all data</div></div>
+          <span style="color:var(--accent);font-size:18px;">↓</span>
         </div>
       </div>
 
       <div style="height:20px;"></div>
-    </div><!-- /section-settings -->
+    </div><!-- /sec-settings -->
 
-  </div><!-- /main-content -->
+  </div><!-- /main -->
 
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav">
-    <button class="nav-item active" data-nav="daily" onclick="switchSection('daily')">
+    <button class="nav-item active" data-nav="daily" onclick="nav('daily')">
       <span class="nav-icon">⚔</span>
-      <span class="nav-label">DAILY</span>
+      <span class="nav-label">Daily</span>
     </button>
-    <button class="nav-item" data-nav="quests" onclick="switchSection('quests')">
+    <button class="nav-item" data-nav="quests" onclick="nav('quests')" style="position:relative;">
       <span class="nav-icon">📜</span>
-      <span class="nav-label">QUESTS</span>
+      <span class="nav-label">Quests</span>
+      <span class="nav-badge" id="quest-badge" style="display:none;">0</span>
     </button>
-    <button class="nav-item" data-nav="training" onclick="switchSection('training')">
+    <button class="nav-item" data-nav="training" onclick="nav('training')">
       <span class="nav-icon">💪</span>
-      <span class="nav-label">TRAIN</span>
+      <span class="nav-label">Train</span>
     </button>
-    <button class="nav-item" data-nav="nutrition" onclick="switchSection('nutrition')">
+    <button class="nav-item" data-nav="nutrition" onclick="nav('nutrition')">
       <span class="nav-icon">🍖</span>
-      <span class="nav-label">FOOD</span>
+      <span class="nav-label">Food</span>
     </button>
-    <button class="nav-item" data-nav="journal" onclick="switchSection('journal')">
+    <button class="nav-item" data-nav="journal" onclick="nav('journal')">
       <span class="nav-icon">📓</span>
-      <span class="nav-label">JOURNAL</span>
+      <span class="nav-label">Journal</span>
     </button>
-    <button class="nav-item" data-nav="settings" onclick="switchSection('settings')">
+    <button class="nav-item" data-nav="settings" onclick="nav('settings')">
       <span class="nav-icon">⚙</span>
-      <span class="nav-label">CONFIG</span>
+      <span class="nav-label">Config</span>
     </button>
   </nav>
+
+  <!-- Quest Quick Add bar (shows when quests tab active) -->
+  <div id="quick-add-bar" class="quick-add-bar" style="display:none;">
+    <input id="quick-add-input" class="quick-add-input"
+      type="text" placeholder="Add quest... 'fix bug tomorrow @work !!! every week'"
+      autocomplete="off"
+      oninput="handleQuickInput(this.value)"
+      onkeydown="if(event.key==='Enter'&&this.value.trim()){quickAddQuest();}" />
+    <button class="quick-add-btn" onclick="quickAddQuest()">+</button>
+  </div>
+  <div id="nlp-hint" class="nlp-hint"></div>
 
 </div><!-- /app -->
 
 <!-- ============================================================
-     DESKTOP OS SHELL
+     SHARE FULLSCREEN
      ============================================================ -->
-<div id="desktop-os">
-  <div class="desktop-topbar">
-    <div class="desktop-topbar-name" id="desktop-name-label">SYSTEM OS</div>
-    <div class="desktop-topbar-right">
-      <div class="desktop-rank" id="desktop-rank">—</div>
-      <div class="desktop-streak" id="desktop-streak">🔥 0</div>
-      <div class="sync-dot" id="sync-dot-desktop"></div>
-      <div class="desktop-clock" id="desktop-clock">00:00</div>
-    </div>
-  </div>
-  <div class="desktop-canvas" id="desktop-canvas"></div>
-  <div class="desktop-taskbar" id="desktop-taskbar"></div>
-</div>
-
-<!-- ============================================================
-     STORY FULLSCREEN
-     ============================================================ -->
-<div id="story-fullscreen">
-  <button class="story-close" id="story-close-btn">×</button>
-  <img id="story-img" src="" alt="Story card" draggable="true"
-    oncontextmenu="return true;"
-    style="max-height:90vh;max-width:100vw;object-fit:contain;border-radius:8px;" />
-  <div class="story-hint" id="story-hint">HOLD IMAGE TO SAVE TO PHOTOS</div>
+<div id="share-screen">
+  <button class="share-close" onclick="$('share-screen').classList.remove('active')">×</button>
+  <img id="share-img" src="" alt="Share card" draggable="true" oncontextmenu="return true;"/>
+  <div class="share-hint">HOLD IMAGE TO SAVE TO PHOTOS</div>
 </div>
 
 <!-- ============================================================
      MODALS
      ============================================================ -->
 
-<!-- Morning prompt modal -->
-<div id="morning-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('morning-modal')">
+<!-- Sleep input -->
+<div id="modal-sleep" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-sleep')">
   <div class="modal-sheet">
     <div class="modal-grip"></div>
-    <div class="modal-icon">🌅</div>
-    <div class="modal-title">MORNING LOG</div>
-    <div class="modal-sub">START THE DAY RIGHT</div>
-    <label class="f-label">Body Weight (<span id="body-wt-unit-label">lbs</span>)</label>
-    <input id="morning-weight-input" class="f-input" type="number" step="0.1" min="0" placeholder="Enter weight..." />
-    <label class="f-label">Today's Intention</label>
-    <textarea id="morning-intention-input" class="f-textarea" placeholder="What's the mission today..."></textarea>
-    <button class="m-btn" onclick="saveMorningPrompt()">LOCK IN →</button>
-    <button class="m-btn m-btn-sec" onclick="closeModal('morning-modal')">SKIP</button>
+    <div class="modal-title">LOG SLEEP</div>
+    <div class="modal-sub">HOW MANY HOURS DID YOU SLEEP?</div>
+    <input id="sleep-input" class="input" type="number" step="0.5" min="0" max="24" placeholder="7.5" style="font-size:32px;text-align:center;padding:20px;"/>
+    <br><br>
+    <button class="btn-primary" onclick="saveSleep()">CONFIRM</button>
   </div>
 </div>
 
-<!-- Evening prompt modal -->
-<div id="evening-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('evening-modal')">
+<!-- Steps input -->
+<div id="modal-steps" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-steps')">
   <div class="modal-sheet">
     <div class="modal-grip"></div>
-    <div class="modal-icon">🌙</div>
-    <div class="modal-title">EVENING DEBRIEF</div>
-    <div class="modal-sub">RATE THE DAY</div>
-    <div class="rank-sel">
-      <button class="r-btn r-s" data-rank="S" onclick="selectRank('S')">S</button>
-      <button class="r-btn r-a" data-rank="A" onclick="selectRank('A')">A</button>
-      <button class="r-btn r-b" data-rank="B" onclick="selectRank('B')">B</button>
-      <button class="r-btn r-c" data-rank="C" onclick="selectRank('C')">C</button>
-      <button class="r-btn r-d" data-rank="D" onclick="selectRank('D')">D</button>
-      <button class="r-btn r-e" data-rank="E" onclick="selectRank('E')">E</button>
-      <button class="r-btn r-f" data-rank="F" onclick="selectRank('F')">F</button>
-    </div>
-    <label class="f-label">Reflection (optional)</label>
-    <textarea id="evening-reflection-input" class="f-textarea" placeholder="What made today this rank?"></textarea>
-    <button class="m-btn" onclick="saveEveningPrompt()">COMMIT RANK →</button>
-    <button class="m-btn m-btn-sec" onclick="closeModal('evening-modal')">CANCEL</button>
+    <div class="modal-title">LOG STEPS</div>
+    <input id="steps-input" class="input" type="number" min="0" placeholder="10000" style="font-size:28px;text-align:center;padding:18px;"/>
+    <br><br>
+    <button class="btn-primary" onclick="saveSteps()">CONFIRM</button>
   </div>
 </div>
 
-<!-- Custom side quest modal -->
-<div id="custom-quest-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('custom-quest-modal')">
+<!-- Quest detail -->
+<div id="modal-quest-detail" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-quest-detail')">
   <div class="modal-sheet">
     <div class="modal-grip"></div>
-    <div class="modal-icon">✦</div>
-    <div class="modal-title">SIDE QUEST</div>
-    <div class="modal-sub">ADD TO TODAY'S LIST</div>
-    <label class="f-label">Quest Name</label>
-    <input id="cq-name-input" class="f-input" type="text" placeholder="e.g. Call mom, Read 20 pages..."
-      onkeydown="if(event.key==='Enter')saveCustomQuest()" autocomplete="off" />
-    <button class="m-btn" onclick="saveCustomQuest()">ADD QUEST →</button>
-    <button class="m-btn m-btn-sec" onclick="closeModal('custom-quest-modal')">CANCEL</button>
+    <div class="modal-body"></div>
   </div>
 </div>
 
-<!-- Add exercise modal -->
-<div id="ex-add-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('ex-add-modal')">
-  <div class="modal-sheet" style="max-height:90vh;overflow-y:auto;">
-    <div class="modal-grip"></div>
-    <div class="modal-title">ADD EXERCISE</div>
-    <div class="modal-sub">SELECT OR TYPE CUSTOM</div>
-    <input id="ex-search-input" class="ex-search" type="text" placeholder="Search exercises..."
-      oninput="renderExList(this.value)" autocomplete="off" />
-    <div class="ex-list" id="ex-list-modal"></div>
-    <button class="m-btn m-btn-sec" onclick="closeModal('ex-add-modal')">CANCEL</button>
-  </div>
-</div>
-
-<!-- Add food modal -->
-<div id="food-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('food-modal')">
-  <div class="modal-sheet" style="max-height:90vh;overflow-y:auto;">
-    <div class="modal-grip"></div>
-    <div class="modal-icon">🍖</div>
-    <div class="modal-title">LOG FOOD</div>
-    <div class="modal-sub">SEARCH OR ENTER MANUALLY</div>
-
-    <!-- Search bar -->
-    <input id="food-search-inp" class="f-input" type="text" placeholder="Search food... (e.g. chicken breast, rice)" autocomplete="off"
-      oninput="searchFoodDB(this.value)" style="margin-bottom:4px;" />
-    <div style="font-family:var(--font-mono);font-size:7px;color:var(--text-muted);margin-bottom:6px;padding:0 2px;">★ = recent · Hold to delete from history</div>
-
-    <!-- Search results -->
-    <div id="food-search-results" style="max-height:200px;overflow-y:auto;margin-bottom:10px;border-radius:8px;"></div>
-
-    <!-- Serving size multiplier -->
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-      <label class="f-label" style="margin-bottom:0;flex-shrink:0;">SERVINGS</label>
-      <input id="food-servings-inp" class="food-form-inp" type="number" value="1" min="0.25" step="0.25" style="width:70px;"
-        oninput="updateServingMultiplier(this.value)" />
-      <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);">× serving size</div>
-    </div>
-
-    <!-- Manual fields -->
-    <div style="font-family:var(--font-mono);font-size:7px;letter-spacing:0.12em;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;">Or enter manually</div>
-    <input id="food-name-inp" class="f-input" type="text" placeholder="Food name..." autocomplete="off" />
-    <div class="food-form">
-      <div class="food-form-field">
-        <div class="food-form-lbl">CALORIES</div>
-        <input id="food-cals-inp" class="food-form-inp" type="number" min="0" placeholder="0" />
-      </div>
-      <div class="food-form-field">
-        <div class="food-form-lbl">PROTEIN (g)</div>
-        <input id="food-prot-inp" class="food-form-inp" type="number" min="0" placeholder="0" />
-      </div>
-      <div class="food-form-field">
-        <div class="food-form-lbl">CARBS (g)</div>
-        <input id="food-carbs-inp" class="food-form-inp" type="number" min="0" placeholder="0" />
-      </div>
-      <div class="food-form-field">
-        <div class="food-form-lbl">FAT (g)</div>
-        <input id="food-fat-inp" class="food-form-inp" type="number" min="0" placeholder="0" />
-      </div>
-    </div>
-    <button class="m-btn" onclick="addFood()">LOG FOOD →</button>
-    <button class="m-btn m-btn-sec" onclick="closeModal('food-modal');clearFoodForm()">CANCEL</button>
-  </div>
-</div>
-
-<!-- Weekly review modal -->
-<div id="weekly-review-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('weekly-review-modal')">
-  <div class="modal-sheet" style="max-height:90vh;overflow-y:auto;">
-    <div class="modal-grip"></div>
-    <div class="modal-icon">📊</div>
-    <div class="modal-title">WEEKLY REVIEW</div>
-    <div id="weekly-review-content" style="margin-bottom:14px;"></div>
-    <label class="f-label">Intention for next week</label>
-    <textarea id="weekly-intention-input" class="f-textarea" placeholder="What's the focus next week?"></textarea>
-    <button class="m-btn" onclick="saveWeeklyReview()">SEAL THE WEEK →</button>
-    <button class="m-btn" onclick="ExportEngine.showFullScreen(false);closeModal('weekly-review-modal')" style="background:none;border:1px solid var(--border-gold);color:var(--gold-bright);">📸 EXPORT STORY</button>
-    <button class="m-btn m-btn-sec" onclick="closeModal('weekly-review-modal')">CLOSE</button>
-  </div>
-</div>
-
-<!-- ============================================================
-     SCRIPTS
-     ============================================================ -->
-<!-- Quest detail modal -->
-<div id="quest-detail-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('quest-detail-modal')">
-  <div class="modal-sheet" style="max-height:90vh;overflow-y:auto;"></div>
-</div>
-
-<!-- New Quest Board modal -->
-<div id="project-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('project-modal')">
+<!-- Add project -->
+<div id="modal-add-project" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-add-project')">
   <div class="modal-sheet">
     <div class="modal-grip"></div>
     <div class="modal-title">NEW QUEST BOARD</div>
-    <div class="modal-sub">CREATE A NEW BOARD TO ORGANIZE QUESTS</div>
-    <label class="f-label">Board Name</label>
-    <input id="project-name-inp" class="f-input" type="text" placeholder="e.g. Fitness Arc, Work Campaign..." autocomplete="off" onkeydown="if(event.key==='Enter')addProject()" />
-    <label class="f-label">Color</label>
-    <input id="project-color-inp" type="color" value="#6c63ff" style="width:100%;height:40px;border:1px solid var(--border);border-radius:8px;background:none;cursor:pointer;margin-bottom:12px;" />
-    <button class="m-btn" onclick="addProject()">CREATE BOARD →</button>
-    <button class="m-btn m-btn-sec" onclick="closeModal('project-modal')">CANCEL</button>
+    <input id="new-project-name" class="input" type="text" placeholder="Board name..." style="margin-bottom:10px;" onkeydown="if(event.key==='Enter')addProject()"/>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <div class="t-label">Color</div>
+      <input id="new-project-color" type="color" value="#6c63ff" style="width:48px;height:40px;border:1px solid var(--border);border-radius:8px;background:none;cursor:pointer;"/>
+    </div>
+    <button class="btn-primary" onclick="addProject()">CREATE BOARD →</button>
   </div>
 </div>
 
-<!-- New Filter modal -->
-<div id="filter-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal('filter-modal')">
+<!-- Add exercise -->
+<div id="modal-add-exercise" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-add-exercise')">
+  <div class="modal-sheet" style="max-height:90vh;">
+    <div class="modal-grip"></div>
+    <div class="modal-title">ADD EXERCISE</div>
+    <input id="exercise-search" class="input" type="text" placeholder="Search exercises..." autocomplete="off"
+      oninput="renderExercisePickerForGroup(activeSplitFilter||'ALL')"
+      style="margin-bottom:8px;"/>
+    <div class="muscle-chips" id="muscle-chips"></div>
+    <div id="exercise-picker-list" style="max-height:340px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);"></div>
+    <br>
+    <button class="btn-ghost" onclick="closeModal('modal-add-exercise')">Cancel</button>
+  </div>
+</div>
+
+<!-- Add food -->
+<div id="modal-add-food" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-add-food')">
   <div class="modal-sheet">
     <div class="modal-grip"></div>
-    <div class="modal-title">SAVED FILTER</div>
-    <div class="modal-sub">QUERY SYNTAX: today · overdue · p1 · @label · next 7 days · & | !</div>
-    <label class="f-label">Filter Name</label>
-    <input id="filter-name-inp" class="f-input" type="text" placeholder="e.g. High Priority Health" autocomplete="off" />
-    <label class="f-label">Query</label>
-    <input id="filter-query-inp" class="f-input" type="text" placeholder="p1 & @health" autocomplete="off" onkeydown="if(event.key==='Enter')addFilter()" />
-    <button class="m-btn" onclick="addFilter()">SAVE FILTER →</button>
-    <button class="m-btn m-btn-sec" onclick="closeModal('filter-modal')">CANCEL</button>
+    <div class="modal-title">LOG FOOD</div>
+    <div class="modal-sub">SEARCH OR ENTER MANUALLY</div>
+    <input id="food-search-inp" class="input" type="text" placeholder="Search your food log..."
+      oninput="runFoodSearch(this.value)" style="margin-bottom:6px;" autocomplete="off"/>
+    <div style="font-family:var(--font-mono);font-size:7px;color:var(--text-muted);margin-bottom:8px;">Hold a result to remove from database</div>
+    <div id="food-search-results" class="food-search-results"></div>
+
+    <div class="food-macro-grid">
+      <div class="food-field full">
+        <label>Food Name</label>
+        <input id="food-name" class="input" type="text" placeholder="e.g. Chicken Breast" autocomplete="off"/>
+      </div>
+      <div class="food-field">
+        <label>Calories</label>
+        <input id="food-cals" class="input" type="number" min="0" placeholder="0" onblur="autoCalcCals()"/>
+      </div>
+      <div class="food-field">
+        <label>Protein (g)</label>
+        <input id="food-protein" class="input" type="number" min="0" placeholder="0" onchange="autoCalcCals()"/>
+      </div>
+      <div class="food-field">
+        <label>Carbs (g)</label>
+        <input id="food-carbs" class="input" type="number" min="0" placeholder="0" onchange="autoCalcCals()"/>
+      </div>
+      <div class="food-field">
+        <label>Fat (g)</label>
+        <input id="food-fat" class="input" type="number" min="0" placeholder="0" onchange="autoCalcCals()"/>
+      </div>
+      <div class="food-field electrolyte-field" style="display:none">
+        <label>Sodium (mg)</label>
+        <input id="food-sodium" class="input" type="number" min="0" placeholder="0"/>
+      </div>
+      <div class="food-field electrolyte-field" style="display:none">
+        <label>Potassium (mg)</label>
+        <input id="food-potassium" class="input" type="number" min="0" placeholder="0"/>
+      </div>
+      <div class="food-field electrolyte-field" style="display:none">
+        <label>Zinc (mg)</label>
+        <input id="food-zinc" class="input" type="number" min="0" placeholder="0"/>
+      </div>
+      <div class="food-field electrolyte-field" style="display:none">
+        <label>Magnesium (mg)</label>
+        <input id="food-magnesium" class="input" type="number" min="0" placeholder="0"/>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn-primary" onclick="confirmAddFood()" style="flex:2;">LOG FOOD →</button>
+      <button class="btn-ghost" id="save-to-db-btn" onclick="saveToPersonalDB()" style="flex:1;">Save to DB</button>
+    </div>
   </div>
 </div>
 
-<script src="js/sounds.js"></script>
-<script src="js/data.js"></script>
-<script src="js/foods.js"></script>
-<script src="js/charts.js"></script>
-<script src="js/export.js"></script>
-<script src="js/desktop.js"></script>
-<script src="js/app.js"></script>
+<!-- PM Debrief -->
+<div id="modal-pm-debrief" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-pm-debrief')">
+  <div class="modal-sheet" style="max-height:90vh;overflow-y:auto;">
+    <div class="modal-grip"></div>
+    <div class="modal-body"></div>
+  </div>
+</div>
 
-<!-- Weekly review render (inline for simplicity) -->
-<script>
-function openWeeklyReview() {
-  const weekStart = getCurrentWeekStart();
-  const { days, bestDay } = getWeekData(weekStart);
-  const content = document.getElementById('weekly-review-content');
-  if (!content) return;
-
-  let chipsHtml = '<div class="week-rank-row">';
-  days.forEach(d => {
-    const col = d.rank ? rankColor(d.rank) : 'var(--text-muted)';
-    chipsHtml += `
-      <div class="week-day-chip">
-        <div class="week-day-label">${d.label}</div>
-        <div class="week-day-rank" style="color:${col};border-color:${col};background:${col}15;">${d.rank||'—'}</div>
-      </div>`;
-  });
-  chipsHtml += '</div>';
-
-  const ranked = days.filter(d=>d.rank);
-  const rankOrder = {S:7,A:6,B:5,C:4,D:3,E:2,F:1};
-  const avgRankNum = ranked.length ? ranked.reduce((s,d)=>s+(rankOrder[d.rank]||0),0)/ranked.length : 0;
-  const avgRankLetter = ['F','F','E','D','C','B','A','S'][Math.round(avgRankNum)] || '—';
-
-  content.innerHTML = `
-    ${chipsHtml}
-    <div style="text-align:center;margin:12px 0;">
-      <div style="font-family:var(--font-mono);font-size:8px;color:var(--text-muted);letter-spacing:0.1em;margin-bottom:4px;">WEEK AVERAGE</div>
-      <div style="font-family:var(--font-display);font-size:36px;font-weight:900;color:${rankColor(avgRankLetter)};">${avgRankLetter}</div>
+<!-- Time start -->
+<div id="modal-time-start" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-time-start')">
+  <div class="modal-sheet">
+    <div class="modal-grip"></div>
+    <div class="modal-title">TIME TRACKER</div>
+    <div class="modal-sub">WHAT ARE YOU WORKING ON?</div>
+    <input id="time-label-input" class="input" type="text" placeholder="e.g. Deep Work, Reading, Training..."
+      onkeydown="if(event.key==='Enter')startTimerFromModal()" autocomplete="off"/>
+    <br><br>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-primary" onclick="startTimerFromModal()">▶ START TIMER</button>
     </div>
-    ${bestDay ? `<div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);text-align:center;margin-bottom:8px;">⭐ BEST DAY: ${bestDay.label} (${bestDay.rank})</div>` : ''}`;
+    <br>
+    <div class="t-label" style="margin-bottom:8px;">OR LOG MANUALLY</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+      <input id="manual-time-label" class="input" placeholder="Label" style="flex:2;"/>
+      <input id="manual-time-mins" class="input" type="number" placeholder="mins" style="flex:1;"/>
+      <button class="btn-ghost" onclick="logManualTime()">Log</button>
+    </div>
+  </div>
+</div>
 
-  SoundEngine.weeklyReview();
+<script src="app.js"></script>
+<script>
+// ── EXTRA WIRING — functions called from HTML that need DOM context ──
+
+// Date nav
+function navDate(dir) {
+  currentDate = addDays(currentDate, dir);
+  renderDaily();
 }
 
-function updateServingMultiplier(val) {
-  const m = parseFloat(val) || 1;
-  const modal = document.getElementById('food-modal');
-  const base = modal?._baseFood;
-  if (!base) return;
-  setVal('food-cals-inp', Math.round(base.calories * m));
-  setVal('food-prot-inp', Math.round(base.protein * m));
-  setVal('food-carbs-inp', Math.round(base.carbs * m));
-  setVal('food-fat-inp', Math.round(base.fat * m));
+// Sleep modal
+function openSleepInput() {
+  const day = getDay(currentDate);
+  setVal('sleep-input', day.sleep || '');
+  openModal('modal-sleep');
+}
+function saveSleep() {
+  const val = parseFloat($('sleep-input').value);
+  if (isNaN(val)) return;
+  const day = getDay(currentDate);
+  day.sleep = val;
+  save();
+  SFX.check();
+  closeModal('modal-sleep');
+  updateDailyChecks(day);
+  updateRankDisplay(day);
+  updateDailyProgress(day);
 }
 
-// Inject food search CSS
-const foodCSS = document.createElement('style');
-foodCSS.textContent = `
-.food-result-row { padding:9px 11px; background:var(--bg-raised); border:1px solid var(--border); border-radius:8px; margin-bottom:4px; cursor:pointer; transition:all 0.13s; }
-.food-result-row:active, .food-result-row.selected { background:var(--accent-dim); border-color:var(--accent); }
-.food-result-name { font-family:var(--font-ui); font-size:13px; color:var(--text-primary); font-weight:500; }
-.food-result-macros { font-family:var(--font-mono); font-size:8px; color:var(--text-secondary); margin-top:2px; }
-.food-search-section-label { font-family:var(--font-mono); font-size:7px; letter-spacing:0.14em; color:var(--gold); text-transform:uppercase; padding:6px 2px 4px; }
-.food-search-empty { font-family:var(--font-mono); font-size:9px; color:var(--text-muted); text-align:center; padding:12px; }
-`;
-document.head.appendChild(foodCSS);
-  const intention = document.getElementById('weekly-intention-input')?.value.trim();
-  if (intention) {
-    const day = getDay(todayKey());
-    day.intention = intention;
-    saveState();
-  }
-  closeModal('weekly-review-modal');
-  SoundEngine.save();
+// Steps modal
+function openStepsInput() {
+  const day = getDay(currentDate);
+  setVal('steps-input', day.steps || '');
+  openModal('modal-steps');
+}
+function saveSteps() {
+  const val = parseInt($('steps-input').value);
+  if (isNaN(val)) return;
+  const day = getDay(currentDate);
+  day.steps = val;
+  save();
+  SFX.check();
+  closeModal('modal-steps');
+  updateDailyChecks(day);
+  updateRankDisplay(day);
+  updateDailyProgress(day);
 }
 
-// Override openModal to add weekly review logic
-const _origOpenModal = openModal;
-window.openModal = function(id) {
-  _origOpenModal(id);
-  if (id === 'weekly-review-modal') openWeeklyReview();
-  if (id === 'morning-modal') {
-    const unit = state.settings.bodyWeightUnit || 'lbs';
-    const label = document.getElementById('body-wt-unit-label');
-    if (label) label.textContent = unit;
-  }
-  if (id === 'food-modal') {
-    // Clear form and show recent history on open
-    clearFoodForm();
-    setVal('food-servings-inp', 1);
-    // Show recently logged foods
-    const deleted = state._deletedFoodHistory || [];
-    const recent = [];
-    Object.entries(state.days).sort((a,b)=>b[0]<a[0]?-1:1).forEach(([,day]) => {
-      (day.nutrition?.foods||[]).forEach(f => {
-        if (!recent.find(r=>r.name===f.name) && !deleted.includes(f.name)) recent.push(f);
-      });
-    });
-    const container = document.getElementById('food-search-results');
-    if (container && recent.length) {
-      container.innerHTML = '<div class="food-search-section-label">RECENTLY LOGGED</div>' +
-        recent.slice(0,8).map(f => foodResultRow(f, true)).join('');
-      bindFoodResults();
-    }
-  }
+// Tracking toggle
+function toggleTracking() {
+  const day = getDay(currentDate);
+  day.trackingOn = !day.trackingOn;
+  save();
+  if (day.trackingOn) openPMDebrief();
+  else { updateDailyChecks(day); updateRankDisplay(day); }
+}
+
+// Update progress bar on daily
+function updateDailyProgress(day) {
+  const s = S.settings;
+  const checks = [
+    day.sleep >= s.sleepGoal,
+    day.cals > 0 && day.cals <= s.caloriesGoal,
+    day.protein >= s.proteinGoal,
+    day.steps >= s.stepsGoal,
+    isTrainedToday(currentDate),
+    day.trackingOn,
+  ];
+  const done = checks.filter(Boolean).length;
+  const fill = $('daily-progress-fill');
+  if (fill) fill.style.width = Math.round(done/6*100) + '%';
+}
+
+// Quest quick add
+function handleQuickInput(val) {
+  const parsed = parseNLP(val);
+  const hint = $('nlp-hint');
+  if (!hint) return;
+  const parts = [];
+  if (parsed.due) parts.push('📅 ' + (parsed.dueLabel || parsed.due));
+  if (parsed.recurring) parts.push('🔁 ' + parsed.recurring);
+  if (parsed.priority < 4) parts.push(['','!!!','!!','!'][parsed.priority]);
+  if (parsed.labels.length) parts.push(parsed.labels.map(l=>'@'+l).join(' '));
+  if (parsed.proj) parts.push('#'+parsed.proj);
+  if (parts.length) { hint.textContent = parts.join(' · '); hint.style.display='block'; }
+  else hint.style.display='none';
+}
+
+function quickAddQuest() {
+  const inp = $('quick-add-input');
+  if (!inp || !inp.value.trim()) return;
+  const pid = activeProject || 'inbox';
+  addQuest(inp.value.trim(), pid);
+  inp.value='';
+  $('nlp-hint').style.display='none';
+  renderQuests();
+  SFX.save();
+}
+
+// Show/hide quick add bar when on quests section
+const _origNav = nav;
+window.nav = function(name) {
+  _origNav(name);
+  const bar = $('quick-add-bar');
+  if (bar) bar.style.display = name === 'quests' ? 'flex' : 'none';
+  // Update label hints
+  const sleepGoalLbl = $('sleep-goal-label');
+  if (sleepGoalLbl) sleepGoalLbl.textContent = S.settings.sleepGoal;
+  const calGoalLbl = $('cal-goal-label');
+  if (calGoalLbl) calGoalLbl.textContent = S.settings.caloriesGoal.toLocaleString();
+  const protGoalLbl = $('prot-goal-label');
+  if (protGoalLbl) protGoalLbl.textContent = S.settings.proteinGoal;
+  const stepsGoalLbl = $('steps-goal-label');
+  if (stepsGoalLbl) stepsGoalLbl.textContent = S.settings.stepsGoal.toLocaleString();
+  const bwu = $('body-weight-unit-label');
+  if (bwu) bwu.textContent = S.settings.bodyWeightUnit;
 };
-</script>
 
+// Training date nav
+function navTraining(dir) {
+  currentTrainingDate = addDays(currentTrainingDate, dir);
+  renderTraining();
+}
+
+// Meal toggle
+function toggleMeal(meal) {
+  const items = $('meal-items-' + meal);
+  if (items) items.style.display = items.style.display === 'none' ? '' : '';
+}
+
+// Exercise picker
+let activeSplitFilter = null;
+function initExercisePicker() {
+  const chips = $('muscle-chips');
+  if (!chips) return;
+  const allChip = document.createElement('button');
+  allChip.className = 'muscle-chip active';
+  allChip.textContent = 'ALL';
+  allChip.onclick = () => { activeSplitFilter = null; setActiveChip(allChip); renderExercisePickerForGroup('ALL'); };
+  chips.appendChild(allChip);
+  Object.keys(EXERCISES).forEach(group => {
+    const chip = document.createElement('button');
+    chip.className = 'muscle-chip';
+    chip.textContent = group.length > 10 ? group.slice(0,10) : group;
+    chip.title = group;
+    chip.onclick = () => { activeSplitFilter = group; setActiveChip(chip); renderExercisePickerForGroup(group); };
+    chips.appendChild(chip);
+  });
+}
+function setActiveChip(active) {
+  document.querySelectorAll('.muscle-chip').forEach(c => c.classList.remove('active'));
+  active.classList.add('active');
+}
+
+// Journal helpers
+function togglePrompts() {
+  const panel = $('journal-prompts-panel');
+  if (panel) panel.style.display = panel.style.display === 'none' ? '' : 'none';
+}
+function saveJournalFree(val) {
+  const day = todayDay();
+  day.journalFree = val;
+  save();
+}
+function saveJournalEntry() {
+  save(true);
+  SFX.save();
+  const btn = document.querySelector('#sec-journal .btn-primary');
+  if (btn) { btn.textContent = 'Saved!'; setTimeout(() => btn.textContent = 'Save Entry', 1500); }
+}
+
+// Time tracker modal
+function openTimeStartModal() {
+  setVal('time-label-input','');
+  openModal('modal-time-start');
+}
+function startTimerFromModal() {
+  const label = $('time-label-input')?.value.trim() || 'Focus';
+  closeModal('modal-time-start');
+  startTimeBlock(label);
+  $('time-stop-btn').style.display = '';
+  $('time-start-btn').style.display = 'none';
+}
+function logManualTime() {
+  const label = $('manual-time-label')?.value.trim() || 'Session';
+  const mins = parseInt($('manual-time-mins')?.value) || 0;
+  if (!mins) return;
+  const day = todayDay();
+  day.timeBlocks.push({ id: uid(), label, start: Date.now(), end: Date.now(), duration: mins * 60 });
+  save();
+  closeModal('modal-time-start');
+  renderTimeTracker();
+}
+
+// CSV export
+function exportCSV() {
+  const rows = Object.values(S.days).sort((a,b) => a.date < b.date ? -1 : 1);
+  const headers = ['Date','Rank','Sleep','Steps','Calories','Protein','Trained','Weight','Energy'];
+  const csv = [headers.join(','), ...rows.map(d => [
+    d.date, autoRank(d), d.sleep, d.steps, d.cals, d.protein,
+    d.trained?1:0, d.weight||'', d.energyLevel||''
+  ].join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = 'SystemOS_' + todayISO() + '.csv';
+  a.click();
+}
+
+// Init on load
+document.addEventListener('DOMContentLoaded', () => {
+  initExercisePicker();
+  // Long-press to delete food from DB
+  document.getElementById('food-search-results').addEventListener('pointerdown', e => {
+    const row = e.target.closest('.search-result');
+    if (!row) return;
+    row._pressTimer = setTimeout(() => {
+      const name = row.querySelector('.sr-name')?.textContent;
+      if (!name) return;
+      if (confirm('Remove "' + name + '" from your food database?')) {
+        const food = S.foodDB.find(f => f.name === name);
+        if (food) {
+          if (!S._deletedFromDB) S._deletedFromDB = [];
+          S._deletedFromDB.push(food.id);
+          save();
+          const inp = $('food-search-inp');
+          if (inp) runFoodSearch(inp.value);
+        }
+      }
+    }, 600);
+  });
+  document.getElementById('food-search-results').addEventListener('pointerup', e => {
+    const row = e.target.closest('.search-result');
+    if (row?._pressTimer) clearTimeout(row._pressTimer);
+  });
+});
+</script>
 </body>
 </html>
