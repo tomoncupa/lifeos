@@ -129,9 +129,9 @@
   --scanline: rgba(0,0,0,0);
   --nav-glow: linear-gradient(90deg,transparent,#c0cfd6 35%,#cee4f9 65%,transparent);
   --panel-shadow: 0 2px 8px rgba(0,0,0,0.15),0 0 0 1px rgba(192,200,214,0.8);
-  --font-display: 'Cinzel', serif;
-  --font-ui:      'Rajdhani', sans-serif;
-  --font-mono:    'Share Tech Mono', monospace;
+  --font-display: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+  --font-ui:      'Tahoma', 'Segoe UI', Geneva, sans-serif;
+  --font-mono:    'Courier New', Courier, monospace;
 }
 
 /* ── 5. OVERGEARED ── */

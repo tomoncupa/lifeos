@@ -108,7 +108,7 @@ function renderDaily() {
   setText('daily-intention-text', day.intention || 'Tap to log today\'s intention...');
 
   // Core quests
-  setCoreQuest('sq-sleep', cq.sleep, day.isRestDay);
+  updateSleepDisplay(cq.sleepHours || 0, day.isRestDay);
   setCoreQuestStepper('sq-steps', cq.steps, s.stepsGoal, 'steps');
   setCoreQuestManual('sq-calories', cq.calories, s.caloriesGoal, 'cal', 'calories');
   setCoreQuestManual('sq-protein', cq.protein, s.proteinGoal, 'g', 'protein');
@@ -126,6 +126,42 @@ function setCoreQuest(id, done, disabled) {
   el.classList.toggle('rest-disabled', disabled);
   const check = el.querySelector('.q-check');
   if (check) check.textContent = done ? '✓' : '';
+}
+
+function sleepStep(dir) {
+  const day = getDay(currentDailyDate);
+  const prev = day.coreQuests.sleepHours || 0;
+  const next = Math.max(0, Math.min(12, Math.round((prev + dir) * 2) / 2));
+  day.coreQuests.sleepHours = next;
+  // Auto-complete: 6.5–10 hrs = done
+  const wasGood = prev >= 6.5 && prev <= 10;
+  const isGood = next >= 6.5 && next <= 10;
+  day.coreQuests.sleep = isGood;
+  if (isGood && !wasGood) { SoundEngine.questComplete(); spawnParticles('😴', 3); }
+  else if (!isGood && wasGood) SoundEngine.questUndo();
+  else SoundEngine.tap();
+  saveState();
+  updateSleepDisplay(next, day.isRestDay);
+  updateTopbar();
+  checkRankCelebration(day);
+}
+
+function updateSleepDisplay(hrs, disabled) {
+  const el = document.getElementById('sq-sleep');
+  if (!el) return;
+  const isGood = hrs >= 6.5 && hrs <= 10;
+  el.classList.toggle('completed', isGood);
+  el.classList.toggle('rest-disabled', disabled);
+  const check = el.querySelector('.q-check');
+  if (check) check.textContent = isGood ? '✓' : '';
+  const valEl = document.getElementById('sleep-val');
+  if (valEl) valEl.textContent = hrs > 0 ? hrs + 'h' : '—';
+  const metaEl = document.getElementById('sleep-meta');
+  if (metaEl) {
+    if (hrs > 0 && hrs < 6.5) metaEl.textContent = 'TOO LITTLE — NEED MORE';
+    else if (hrs > 10) metaEl.textContent = 'TOO MUCH';
+    else metaEl.textContent = 'GOAL: 6.5–10 hrs';
+  }
 }
 
 function setCoreQuestStepper(id, val, goal, key) {
@@ -994,17 +1030,14 @@ function toggleSetting(key, el) {
 // ============================================================
 function setupAlarms() {
   setInterval(() => {
-    if (!state.settings.sounds) return;
     const now = new Date();
     const t = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
     const day = getDay(todayKey());
     if (t === state.settings.wakeTime && !day.morningDone && !alarmDismissed.morning) {
       showAlarm('🌅', 'MORNING LOG', 'Weight · Intention', openMorningPrompt);
-      SoundEngine.alarm();
     }
     if (t === state.settings.eveningTime && !day.eveningDone && !alarmDismissed.evening) {
       showAlarm('🌙', 'EVENING DEBRIEF', 'Rate your day', openEveningPrompt);
-      SoundEngine.alarm();
     }
   }, 30000);
 }
@@ -1013,12 +1046,17 @@ function showAlarm(icon, title, sub, action) {
   setText('alarm-icon', icon);
   setText('alarm-title', title);
   setText('alarm-sub', sub);
-  document.getElementById('alarm-open-btn').onclick = () => { hideAlarm(); action(); };
-  document.getElementById('alarm-banner').classList.add('show');
+  const openBtn = document.getElementById('alarm-open-btn');
+  const closeBtn = document.getElementById('alarm-close-btn');
+  if (openBtn) openBtn.onclick = (e) => { e.stopPropagation(); hideAlarm(); if (action) action(); };
+  if (closeBtn) closeBtn.onclick = (e) => { e.stopPropagation(); hideAlarm(); };
+  const banner = document.getElementById('alarm-banner');
+  if (banner) banner.classList.add('show');
 }
 
 function hideAlarm() {
-  document.getElementById('alarm-banner').classList.remove('show');
+  const banner = document.getElementById('alarm-banner');
+  if (banner) banner.classList.remove('show');
 }
 
 // ============================================================
@@ -1096,8 +1134,14 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('topbar-date').textContent =
     new Date().toLocaleDateString('en', { weekday:'short', month:'short', day:'numeric' }).toUpperCase();
 
-  // Init sounds
+  // Init sounds — iOS requires AudioContext resumed on first user gesture
   SoundEngine.setEnabled(state.settings.sounds !== false);
+  const unlockAudio = () => {
+    SoundEngine.init();
+    SoundEngine.resume();
+  };
+  document.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
+  document.addEventListener('click', unlockAudio, { once: true });
 
   // Boot sequence
   setTimeout(() => {
