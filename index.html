@@ -91,7 +91,7 @@
       <div class="alarm-sub" id="alarm-sub">Weight · Intention</div>
     </div>
     <button class="alarm-open-btn" id="alarm-open-btn">OPEN</button>
-    <button id="alarm-close-btn" onclick="hideAlarm()" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;padding:4px 8px;line-height:1;-webkit-tap-highlight-color:transparent;">×</button>
+    <button onclick="hideAlarm()" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0 4px;">×</button>
   </div>
 
   <!-- MAIN CONTENT -->
@@ -142,18 +142,14 @@
       <div class="quest-list">
 
         <!-- Sleep -->
-        <div class="quest-item" id="sq-sleep">
+        <div class="quest-item" id="sq-sleep" onclick="toggleCoreQuest('sleep')">
           <div class="q-inner">
-            <div class="q-check" onclick="toggleCoreQuest('sleep')"></div>
-            <div class="q-info" onclick="toggleCoreQuest('sleep')">
+            <div class="q-check"></div>
+            <div class="q-info">
               <div class="q-name">SLEEP</div>
-              <div class="q-meta" id="sleep-meta">GOAL: 6.5–10 hrs</div>
+              <div class="q-meta">CORE QUEST</div>
             </div>
-            <div class="q-stepper" onclick="event.stopPropagation()">
-              <button class="step-btn" onclick="sleepStep(-0.5)">−</button>
-              <div class="step-val" id="sleep-val" style="font-family:var(--font-mono);font-size:13px;color:var(--text-primary);min-width:44px;text-align:center;">0h</div>
-              <button class="step-btn" onclick="sleepStep(0.5)">+</button>
-            </div>
+            <span style="font-size:22px;">😴</span>
           </div>
         </div>
 

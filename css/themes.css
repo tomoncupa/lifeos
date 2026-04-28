@@ -1,0 +1,168 @@
+/* ============================================================
+   SYSTEM OS — 5 THEMES
+   ============================================================ */
+
+/* ── 1. SOLO LEVELLING (default) ── */
+[data-theme="sl"] {
+  --bg-void:       #06060a;
+  --bg-deep:       #0c0c16;
+  --bg-card:       #10101e;
+  --bg-raised:     #16162c;
+  --bg-hover:      #1c1c38;
+  --accent:        #6c63ff;
+  --accent-dim:    #2a2560;
+  --accent-glow:   rgba(108,99,255,0.15);
+  --gold:          #a78bfa;
+  --gold-bright:   #c4b5fd;
+  --gold-dim:      #3d2f6a;
+  --secondary:     #38bdf8;
+  --secondary-dim: #0c2a3a;
+  --danger:        #f87171;
+  --success:       #34d399;
+  --text-primary:  #e2e0f0;
+  --text-secondary:#6868a0;
+  --text-muted:    #28284a;
+  --border:        rgba(108,99,255,0.16);
+  --border-accent: rgba(108,99,255,0.32);
+  --border-gold:   rgba(167,139,250,0.22);
+  --rank-s: #c4b5fd; --rank-a: #38bdf8; --rank-b: #6c63ff;
+  --rank-c: #34d399; --rank-d: #6b6b8a; --rank-e: #3a3a58; --rank-f: #1e1e30;
+  --scanline: rgba(108,99,255,0.025);
+  --nav-glow: linear-gradient(90deg,transparent,#6c63ff 35%,#38bdf8 65%,transparent);
+  --panel-shadow: 0 8px 32px rgba(0,0,0,0.6),0 0 0 1px rgba(108,99,255,0.12);
+  --font-display: 'Cinzel', serif;
+  --font-ui:      'Rajdhani', sans-serif;
+  --font-mono:    'Share Tech Mono', monospace;
+}
+
+/* ── 2. FF7 CLASSIC ── */
+[data-theme="ff7c"] {
+  --bg-void:       #05050a;
+  --bg-deep:       #0a0a12;
+  --bg-card:       #0f0f1a;
+  --bg-raised:     #151525;
+  --bg-hover:      #1a1a30;
+  --accent:        #00d4aa;
+  --accent-dim:    #005c4a;
+  --accent-glow:   rgba(0,212,170,0.13);
+  --gold:          #c9a84c;
+  --gold-bright:   #f0c040;
+  --gold-dim:      #6b5520;
+  --secondary:     #7b5ea7;
+  --secondary-dim: #2d1f4a;
+  --danger:        #ff6b6b;
+  --success:       #00d4aa;
+  --text-primary:  #e8e0d0;
+  --text-secondary:#7a7060;
+  --text-muted:    #30281e;
+  --border:        rgba(201,168,76,0.15);
+  --border-accent: rgba(0,212,170,0.22);
+  --border-gold:   rgba(201,168,76,0.3);
+  --rank-s: #f0c040; --rank-a: #00d4aa; --rank-b: #7b5ea7;
+  --rank-c: #4a9eff; --rank-d: #6a6060; --rank-e: #3a3030; --rank-f: #1e1818;
+  --scanline: rgba(0,0,0,0.07);
+  --nav-glow: linear-gradient(90deg,transparent,#00d4aa 35%,#c9a84c 65%,transparent);
+  --panel-shadow: 0 8px 32px rgba(0,0,0,0.7),0 0 0 1px rgba(201,168,76,0.1);
+  --font-display: 'Cinzel', serif;
+  --font-ui:      'Rajdhani', sans-serif;
+  --font-mono:    'Share Tech Mono', monospace;
+}
+
+/* ── 3. FF7 REMAKE ── */
+[data-theme="ff7r"] {
+  --bg-void:       #040608;
+  --bg-deep:       #080c12;
+  --bg-card:       #0c1018;
+  --bg-raised:     #101620;
+  --bg-hover:      #141c28;
+  --accent:        #00c8e8;
+  --accent-dim:    #003848;
+  --accent-glow:   rgba(0,200,232,0.13);
+  --gold:          #e8a020;
+  --gold-bright:   #ffbe30;
+  --gold-dim:      #604010;
+  --secondary:     #8040c0;
+  --secondary-dim: #301860;
+  --danger:        #ff5050;
+  --success:       #00c8e8;
+  --text-primary:  #d8e8f0;
+  --text-secondary:#5080a0;
+  --text-muted:    #182030;
+  --border:        rgba(0,200,232,0.14);
+  --border-accent: rgba(0,200,232,0.28);
+  --border-gold:   rgba(232,160,32,0.25);
+  --rank-s: #ffbe30; --rank-a: #00c8e8; --rank-b: #8040c0;
+  --rank-c: #40b0ff; --rank-d: #405060; --rank-e: #202830; --rank-f: #101418;
+  --scanline: rgba(0,200,232,0.025);
+  --nav-glow: linear-gradient(90deg,transparent,#00c8e8 35%,#8040c0 65%,transparent);
+  --panel-shadow: 0 8px 32px rgba(0,0,0,0.7),0 0 0 1px rgba(0,200,232,0.1);
+  --font-display: 'Cinzel', serif;
+  --font-ui:      'Rajdhani', sans-serif;
+  --font-mono:    'Share Tech Mono', monospace;
+}
+
+/* ── 4. RAGNAROK ONLINE ── */
+[data-theme="ro"] {
+  --bg-void:       #f0f0f0;
+  --bg-deep:       #f8f8f8;
+  --bg-card:       #ffffff;
+  --bg-raised:     #ececec;
+  --bg-hover:      #e0e8f0;
+  --accent:        #4a82b4;
+  --accent-dim:    #cee4f9;
+  --accent-glow:   rgba(74,130,180,0.12);
+  --gold:          #6a5a3a;
+  --gold-bright:   #4a6a8a;
+  --gold-dim:      #d0d8e0;
+  --secondary:     #5a7a9a;
+  --secondary-dim: #e5f2ff;
+  --danger:        #cc3333;
+  --success:       #336633;
+  --text-primary:  #1a1a2a;
+  --text-secondary:#5a6a7a;
+  --text-muted:    #b0b8c0;
+  --border:        rgba(192,200,214,0.9);
+  --border-accent: rgba(74,130,180,0.5);
+  --border-gold:   rgba(74,130,180,0.3);
+  --rank-s: #4a82b4; --rank-a: #336699; --rank-b: #5a7a9a;
+  --rank-c: #6a8a6a; --rank-d: #8a8a8a; --rank-e: #aaaaaa; --rank-f: #cccccc;
+  --scanline: rgba(0,0,0,0);
+  --nav-glow: linear-gradient(90deg,transparent,#c0cfd6 35%,#cee4f9 65%,transparent);
+  --panel-shadow: 0 2px 8px rgba(0,0,0,0.15),0 0 0 1px rgba(192,200,214,0.8);
+  --font-display: 'Cinzel', serif;
+  --font-ui:      'Rajdhani', sans-serif;
+  --font-mono:    'Share Tech Mono', monospace;
+}
+
+/* ── 5. OVERGEARED ── */
+[data-theme="og"] {
+  --bg-void:       #3a4560;
+  --bg-deep:       #4a5570;
+  --bg-card:       #5a6580;
+  --bg-raised:     #65799a;
+  --bg-hover:      #7085a8;
+  --accent:        #ceeeff;
+  --accent-dim:    rgba(206,238,255,0.15);
+  --accent-glow:   rgba(206,238,255,0.1);
+  --gold:          #ffffff;
+  --gold-bright:   #ffffff;
+  --gold-dim:      rgba(255,255,255,0.2);
+  --secondary:     #d88038;
+  --secondary-dim: rgba(216,128,56,0.2);
+  --danger:        #e05555;
+  --success:       #55cc88;
+  --text-primary:  #ffffff;
+  --text-secondary:#c0cfe0;
+  --text-muted:    rgba(255,255,255,0.25);
+  --border:        rgba(179,186,204,0.5);
+  --border-accent: rgba(206,238,255,0.6);
+  --border-gold:   rgba(216,128,56,0.5);
+  --rank-s: #fbbf24; --rank-a: #ceeeff; --rank-b: #a0b8d8;
+  --rank-c: #d88038; --rank-d: #8090a8; --rank-e: #607090; --rank-f: #4a5570;
+  --scanline: rgba(0,0,0,0.03);
+  --nav-glow: linear-gradient(90deg,transparent,#ceeeff 35%,#d88038 65%,transparent);
+  --panel-shadow: 0 8px 32px rgba(0,0,0,0.4),0 0 0 1px rgba(206,238,255,0.3);
+  --font-display: 'Cinzel', serif;
+  --font-ui:      'Rajdhani', sans-serif;
+  --font-mono:    'Share Tech Mono', monospace;
+}
