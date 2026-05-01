@@ -1445,7 +1445,6 @@ function renderTraining() {
   setText('session-timer-text', '00:00');
 
   // Muscle heatmap
-  renderMuscleHeatmap();
 
   // Exercise list
   renderExerciseList(sess);
@@ -1454,22 +1453,7 @@ function renderTraining() {
   updateCopySessionBtn();
 }
 
-function renderMuscleHeatmap() {
-  const heatmap = $('muscle-heatmap');
-  if (!heatmap) return;
-  const daysSince = getMuscleDays();
-  heatmap.innerHTML = Object.keys(EXERCISES).slice(0, 12).map(group => {
-    const days = daysSince[group];
-    const color = days === undefined ? 'var(--border)' :
-                  days === 0 ? '#22c55e' :
-                  days <= 2  ? '#f59e0b' :
-                  days <= 5  ? '#ef4444' : '#374151';
-    const label = group.length > 10 ? group.slice(0,10)+'…' : group;
-    return `<div class="heatmap-cell" style="background:${color}" title="${group}: ${days !== undefined ? days+'d ago' : 'not trained'}" onclick="filterBySplit('${group}')">
-      <span>${esc(label)}</span>
-    </div>`;
-  }).join('');
-}
+function renderMuscleHeatmap() {} // removed
 
 function filterBySplit(group) {
   activeMuscleSplit = activeMuscleSplit === group ? null : group;
