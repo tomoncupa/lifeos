@@ -232,7 +232,6 @@ let S = {
     { id: 'main',  name: 'Main Quest',   color: '#f0b323', itemOrder: 0 },
     { id: 'daily', name: 'Daily Quests', color: '#22c55e', itemOrder: 1 },
     { id: 'side',  name: 'Side Quests',  color: '#3b82f6', itemOrder: 2 },
-    { id: 'inbox', name: 'Inbox',        color: '#6b7280', itemOrder: 3 },
   ],
   foodDB: [],
   training: {},
@@ -452,7 +451,7 @@ function upcomingQuests(days = 7) {
     .sort((a,b) => a.due < b.due ? -1 : 1);
 }
 
-function addQuest(raw, projectId = 'inbox') {
+function addQuest(raw, projectId = 'side') {
   const parsed = parseNLP(raw);
   if (!parsed.content) return null;
   const pid = parsed.proj
@@ -1147,9 +1146,9 @@ function renderQuestSidebar() {
 
   const todayCount = questsForToday().length + overdueQuests().length;
   const views = [
-    { id: 'today',    label: '⚔ Today',    badge: todayCount },
-    { id: 'upcoming', label: '📅 Upcoming', badge: upcomingQuests().length },
-    { id: 'all',      label: '📋 All',      badge: S.quests.filter(q=>!q.checked).length },
+    { id: 'today',    label: 'Today',    badge: todayCount },
+    { id: 'upcoming', label: 'Upcoming', badge: upcomingQuests().length },
+    { id: 'all',      label: 'All',      badge: S.quests.filter(q=>!q.checked).length },
   ];
 
   let html = views.map(v => `
