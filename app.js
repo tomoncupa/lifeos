@@ -163,6 +163,8 @@ const DEFAULTS = {
   weightPace: 1.0,
   shareWeight: false,
   supplements: [],
+  caffeineHalfLifeMode: false,   // false = 5hr standard, true = 7hr slow metabolizer
+  caffeineEnabled: true,
 };
 
 function freshDay(date) {
@@ -1032,6 +1034,7 @@ function nav(name) {
 }
 
 function render(name) {
+  if (name !== 'journal') stopCaffeineUpdates();
   switch(name) {
     case 'daily':     renderDaily(); break;
     case 'quests':    renderQuests(); break;
@@ -1616,13 +1619,47 @@ function addExerciseToSession(name) {
 function renderExercisePickerForGroup(group) {
   const list = $('exercise-picker-list');
   if (!list) return;
-  const exercises = group === 'ALL' ? allExercises() : (EXERCISES[group] || []);
   const searchVal = $('exercise-search')?.value?.toLowerCase() || '';
-  const filtered = searchVal ? exercises.filter(e => e.toLowerCase().includes(searchVal)) : exercises;
-  list.innerHTML = filtered.map(name => `
-    <div class="picker-row" onclick="addExerciseToSession('${esc(name)}')">
-      <span>${esc(name)}</span>
-    </div>`).join('');
+
+  // Personal history first (exercises logged before, sorted by recency)
+  const historyNames = [];
+  const historySet = new Set();
+  Object.entries(S.training).sort((a,b) => b[0] < a[0] ? -1 : 1).forEach(([, sess]) => {
+    sess.exercises.forEach(ex => {
+      if (!historySet.has(ex.name)) { historySet.add(ex.name); historyNames.push(ex.name); }
+    });
+  });
+
+  let pool;
+  if (searchVal.length >= 1) {
+    // Search full DB when typing
+    pool = allExercises().filter(e => e.toLowerCase().includes(searchVal));
+    // Boost history matches to top
+    pool.sort((a,b) => {
+      const aH = historySet.has(a), bH = historySet.has(b);
+      if (aH && !bH) return -1;
+      if (!aH && bH) return 1;
+      return 0;
+    });
+  } else if (group && group !== 'ALL') {
+    pool = EXERCISES[group] || [];
+  } else {
+    // Default: show personal history first, then nothing else until they type
+    pool = historyNames.slice(0, 20);
+  }
+
+  if (!pool.length && searchVal.length >= 1) {
+    list.innerHTML = '<div class="picker-empty">No exercises found for "' + esc(searchVal) + '"</div>';
+    return;
+  }
+
+  list.innerHTML = pool.map(name => {
+    const isHistory = historySet.has(name);
+    return '<div class="picker-row' + (isHistory ? ' picker-history' : '') + '" onclick="addExerciseToSession(\'' + name.replace(/'/g,"\\'") + '\')">' +
+      '<span class="picker-name">' + esc(name) + '</span>' +
+      (isHistory ? '<span class="picker-hist-badge">Recent</span>' : '') +
+      '</div>';
+  }).join('');
 }
 
 function updateCopySessionBtn() {
@@ -1835,11 +1872,148 @@ function saveToPersonalDB() {
   if (btn) { btn.textContent = 'Saved!'; setTimeout(() => btn.textContent = 'Save to DB', 1500); }
 }
 
+
+// ================================================================
+// CAFFEINE HALF-LIFE TRACKER
+// ================================================================
+// Standard half-life: 5 hours. Slow metabolizer: 7 hours.
+// Logs stored as: { id, time (ISO datetime), amount (mg) }
+
+function getCaffeineHalfLife() {
+  return S.settings.caffeineHalfLifeMode ? 7 : 5; // hours
+}
+
+function calcCaffeineInSystem(nowMs) {
+  const day = todayDay();
+  const logs = day.caffeineLogs || [];
+  const halfLifeMs = getCaffeineHalfLife() * 3600000;
+  let total = 0;
+  logs.forEach(log => {
+    const elapsed = nowMs - new Date(log.time).getTime();
+    if (elapsed >= 0) {
+      total += log.amount * Math.pow(0.5, elapsed / halfLifeMs);
+    }
+  });
+  return Math.round(total);
+}
+
+function calcCaffeineClearTime() {
+  const day = todayDay();
+  const logs = day.caffeineLogs || [];
+  if (!logs.length) return null;
+  const halfLifeMs = getCaffeineHalfLife() * 3600000;
+  const threshold = 25; // mg — effectively "clear"
+  const now = Date.now();
+  // Total caffeine now
+  let total = calcCaffeineInSystem(now);
+  if (total < threshold) return null;
+  // Solve: total * 0.5^(t/halfLife) = 25
+  // t = halfLife * log2(total/25)
+  const hoursUntilClear = getCaffeineHalfLife() * Math.log2(total / threshold);
+  const clearTime = new Date(now + hoursUntilClear * 3600000);
+  return clearTime;
+}
+
+function addCaffeineLog(time, amount) {
+  const day = todayDay();
+  if (!day.caffeineLogs) day.caffeineLogs = [];
+  day.caffeineLogs.push({ id: uid(), time, amount });
+  day.caffeineLogs.sort((a,b) => a.time < b.time ? -1 : 1);
+  save();
+  renderCaffeineTracker();
+}
+
+function removeCaffeineLog(id) {
+  const day = todayDay();
+  day.caffeineLogs = (day.caffeineLogs || []).filter(l => l.id !== id);
+  save();
+  renderCaffeineTracker();
+}
+
+function renderCaffeineTracker() {
+  const container = $('caffeine-tracker');
+  if (!container) return;
+  if (!S.settings.caffeineEnabled) { container.style.display = 'none'; return; }
+  container.style.display = '';
+
+  const day = todayDay();
+  const logs = day.caffeineLogs || [];
+  const inSystem = calcCaffeineInSystem(Date.now());
+  const clearTime = calcCaffeineClearTime();
+  const halfLife = getCaffeineHalfLife();
+
+  // Bar: max ~600mg for scale
+  const pct = Math.min(100, (inSystem / 600) * 100);
+  const barColor = inSystem > 400 ? '#ef4444' : inSystem > 200 ? '#f0b323' : '#22c55e';
+
+  let clearStr = '';
+  if (clearTime) {
+    const h = clearTime.getHours();
+    const m = pad(clearTime.getMinutes());
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    clearStr = `Clears ~${h % 12 || 12}:${m} ${ampm}`;
+  } else {
+    clearStr = 'System clear ✓';
+  }
+
+  container.innerHTML = `
+    <div class="caff-header">
+      <div class="caff-title">CAFFEINE</div>
+      <div class="caff-meta">${halfLife}hr half-life · ${clearStr}</div>
+    </div>
+    <div class="caff-bar-track">
+      <div class="caff-bar-fill" style="width:${pct}%;background:${barColor}"></div>
+    </div>
+    <div class="caff-amount">${inSystem}<span class="caff-unit">mg in system</span></div>
+    <div class="caff-logs">
+      ${logs.map(l => {
+        const t = new Date(l.time);
+        const timeStr = t.toLocaleTimeString('en',{hour:'numeric',minute:'2-digit',hour12:true});
+        return `<div class="caff-log-row">
+          <span class="caff-log-time">${timeStr}</span>
+          <span class="caff-log-amt">${l.amount}mg</span>
+          <button class="caff-log-del" onclick="removeCaffeineLog('${l.id}')">×</button>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="caff-add-row">
+      <input id="caff-time-inp" type="time" class="caff-inp" value="${new Date().toTimeString().slice(0,5)}"/>
+      <input id="caff-amt-inp" type="number" class="caff-inp" placeholder="mg" min="0" max="1000" style="width:70px"/>
+      <button class="caff-add-btn" onclick="logCaffeineFromInputs()">Log</button>
+    </div>`;
+}
+
+function logCaffeineFromInputs() {
+  const timeVal = $('caff-time-inp')?.value;
+  const amtVal  = parseFloat($('caff-amt-inp')?.value);
+  if (!timeVal || !amtVal || amtVal <= 0) return;
+  const today = todayISO();
+  const time = `${today}T${timeVal}:00`;
+  addCaffeineLog(time, amtVal);
+  const inp = $('caff-amt-inp');
+  if (inp) inp.value = '';
+  SFX.save();
+}
+
+// Update caffeine display every minute when journal is visible
+let _caffeineInterval = null;
+function startCaffeineUpdates() {
+  stopCaffeineUpdates();
+  renderCaffeineTracker();
+  _caffeineInterval = setInterval(() => {
+    if (currentSection === 'journal') renderCaffeineTracker();
+  }, 60000);
+}
+function stopCaffeineUpdates() {
+  if (_caffeineInterval) { clearInterval(_caffeineInterval); _caffeineInterval = null; }
+}
+
 // ================================================================
 // 23. JOURNAL RENDER
 // ================================================================
 function renderJournal() {
   const day = getDay(todayISO());
+  startCaffeineUpdates();
   // Energy
   renderEnergyPicker(day);
   // Prompts
@@ -2040,6 +2214,7 @@ function savePMDebrief() {
 function renderSettings() {
   const s = S.settings;
   setVal('set-name', s.name);
+  setVal('set-main-objective', s.mainObjective || '');
   setVal('set-wake', s.wakeTime);
   setVal('set-sleep-goal', s.sleepGoal);
   setVal('set-cal-goal', s.caloriesGoal);
@@ -2061,6 +2236,8 @@ function renderSettings() {
   setToggle('tog-cal-badge', s.calBadgeEnabled);
   setToggle('tog-electrolyte', s.electrolyteMode);
   setToggle('tog-karma', s.karmaEnabled);
+  setToggle('tog-caffeine', s.caffeineEnabled);
+  setToggle('tog-caff-half-life', s.caffeineHalfLifeMode);
   setToggle('tog-share-weight', s.shareWeight);
 
   setVal('set-sb-url', s.supabaseUrl);
