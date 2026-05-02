@@ -600,6 +600,7 @@ select.input{-webkit-appearance:none;cursor:pointer;}
    TRAINING TAB
    ============================================================ */
 .training-date-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;}
+.training-date-center{flex:1;text-align:center;}
 .session-info{display:flex;align-items:center;gap:8px;}
 .session-timer{font-family:var(--font-mono);font-size:17px;color:var(--text-secondary);}
 
@@ -1405,13 +1406,13 @@ canvas.chart-canvas{width:100%;display:block;}
       <!-- Date nav + session timer -->
       <div class="training-date-nav">
         <button class="date-nav-btn" onclick="navTraining(-1)">‹</button>
-        <div style="text-align:center;">
+        <div class="training-date-center">
           <div class="date-nav-label t-label" id="training-date">TODAY</div>
           <div class="session-info">
             <span class="session-timer">⏱ <span id="session-timer-text">00:00</span></span>
           </div>
         </div>
-        <button class="date-nav-btn hidden" id="training-next-date" onclick="navTraining(1)">›</button>
+        <button class="date-nav-btn" id="training-next-date" onclick="navTraining(1)" style="visibility:hidden;">›</button>
       </div>
 
       <!-- Routine pill bar (active exercises) -->
@@ -1476,9 +1477,12 @@ canvas.chart-canvas{width:100%;display:block;}
           placeholder="Search or add exercise..."
           autocomplete="off" autocorrect="off" spellcheck="false"
           oninput="handleExerciseSearch(this.value)"
-          onfocus="$('ex-search-results').classList.add('open');renderExercisePickerForGroup(activeSplitFilter||'ALL')"
+          onfocus="handleExerciseSearch(this.value)"
         />
-        <div id="ex-search-results" class="ex-search-results"></div>
+        <div id="ex-search-results" class="ex-search-results">
+          <div id="muscle-chips" class="muscle-chips"></div>
+          <div id="exercise-picker-list"></div>
+        </div>
       </div>
 
       <!-- Session volume footer -->
@@ -1928,13 +1932,7 @@ canvas.chart-canvas{width:100%;display:block;}
 <div id="modal-add-exercise" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-add-exercise')">
   <div class="modal-sheet" style="max-height:90vh;">
     <div class="modal-grip"></div>
-    <div class="modal-title">ADD EXERCISE</div>
-    <input id="exercise-search" class="input" type="text" placeholder="Search exercises..." autocomplete="off"
-      oninput="renderExercisePickerForGroup(activeSplitFilter||'ALL')"
-      style="margin-bottom:8px;"/>
-    <div id="exercise-picker-list" style="max-height:340px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);"></div>
-    <br>
-    <button class="btn-ghost" onclick="closeModal('modal-add-exercise')">Cancel</button>
+    <div id="exercise-picker-list"></div>
   </div>
 </div>
 
@@ -2025,7 +2023,7 @@ canvas.chart-canvas{width:100%;display:block;}
   </div>
 </div>
 
-<script src="app.js?v=2"></script>
+<script src="app.js?v=4"></script>
 <script>
 // ── EXTRA WIRING — functions called from HTML that need DOM context ──
 
@@ -2157,27 +2155,7 @@ function toggleMeal(meal) {
 
 // Exercise picker
 let activeSplitFilter = null;
-function initExercisePicker() {
-  const chips = $('muscle-chips');
-  if (!chips) return;
-  const allChip = document.createElement('button');
-  allChip.className = 'muscle-chip active';
-  allChip.textContent = 'ALL';
-  allChip.onclick = () => { activeSplitFilter = null; setActiveChip(allChip); renderExercisePickerForGroup('ALL'); };
-  chips.appendChild(allChip);
-  Object.keys(EXERCISES).forEach(group => {
-    const chip = document.createElement('button');
-    chip.className = 'muscle-chip';
-    chip.textContent = group.length > 10 ? group.slice(0,10) : group;
-    chip.title = group;
-    chip.onclick = () => { activeSplitFilter = group; setActiveChip(chip); renderExercisePickerForGroup(group); };
-    chips.appendChild(chip);
-  });
-}
-function setActiveChip(active) {
-  document.querySelectorAll('.muscle-chip').forEach(c => c.classList.remove('active'));
-  active.classList.add('active');
-}
+// initExercisePicker and setActiveChip defined in app.js
 
 // Journal helpers
 function togglePrompts() {
@@ -2242,24 +2220,7 @@ function exportCSV() {
   a.click();
 }
 
-// handleExerciseSearch — live filter without modal
-function handleExerciseSearch(val) {
-  const results = $('ex-search-results');
-  if (!results) return;
-  if (val.length === 0) {
-    renderExercisePickerForGroup(activeSplitFilter || 'ALL');
-  } else {
-    renderExercisePickerForGroup('ALL');
-  }
-  results.classList.add('open');
-}
-
-// Close search results when clicking outside
-document.addEventListener('click', e => {
-  if (!e.target.closest('.ex-search-wrap')) {
-    $('ex-search-results')?.classList.remove('open');
-  }
-});
+// handleExerciseSearch and click-outside handler defined in app.js
 
 // Init on load
 document.addEventListener('DOMContentLoaded', () => {

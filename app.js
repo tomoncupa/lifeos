@@ -1541,7 +1541,7 @@ function renderTraining() {
   const sess    = getSession(currentTrainingDate);
   const isToday = currentTrainingDate === todayISO();
   setText('training-date', isToday ? 'TODAY' : fmtDate(currentTrainingDate).toUpperCase());
-  $('training-next-date')?.classList.toggle('hidden', isToday);
+  const nextBtn = $('training-next-date'); if (nextBtn) nextBtn.style.visibility = isToday ? 'hidden' : 'visible';
   setText('session-timer-text', '00:00');
 
   _renderRoutineBar(sess);
@@ -2107,8 +2107,8 @@ function renderExercisePickerForGroup(group) {
 function handleExerciseSearch(val) {
   const results = $('ex-search-results');
   if (!results) return;
-  renderExercisePickerForGroup(activeSplitFilter || 'ALL');
   results.classList.add('open');
+  renderExercisePickerForGroup(activeSplitFilter || 'ALL');
 }
 
 document.addEventListener('click', e => {
