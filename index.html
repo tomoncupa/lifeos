@@ -599,10 +599,10 @@ select.input{-webkit-appearance:none;cursor:pointer;}
 /* ============================================================
    TRAINING TAB
    ============================================================ */
-.training-date-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;}
-.training-date-center{flex:1;text-align:center;}
-.session-info{display:flex;align-items:center;gap:8px;}
-.session-timer{font-family:var(--font-mono);font-size:17px;color:var(--text-secondary);}
+.training-date-nav{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 6px;gap:8px;}
+.training-date-center{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;}
+.session-info{display:flex;align-items:center;justify-content:center;gap:6px;}
+.session-timer{font-family:var(--font-mono);font-size:13px;color:var(--text-secondary);}
 
 .muscle-heatmap{
   margin:0 16px 12px;
@@ -671,7 +671,7 @@ select.input{-webkit-appearance:none;cursor:pointer;}
 .training-empty,.empty-state{padding:40px 20px;text-align:center;}
 .training-empty-icon,.empty-state-icon{font-size:36px;margin-bottom:10px;}
 .training-empty-sub,.empty-state-sub{font-family:var(--font-mono);font-size:17px;color:var(--text-muted);margin-top:6px;}
-.training-actions{padding:0 16px 12px;display:flex;gap:8px;}
+.training-actions{padding:0 16px;display:flex;gap:8px;min-height:0;}
 
 /* Exercise picker */
 .muscle-chips{display:flex;gap:6px;padding:0 0 10px;flex-wrap:wrap;}
@@ -1028,9 +1028,9 @@ canvas.chart-canvas{width:100%;display:block;}
   font-family:var(--font-mono);font-size:10px;color:var(--text-secondary);
   letter-spacing:.14em;text-transform:uppercase;margin-bottom:5px;
 }
-.ep-stepper-row{display:flex;align-items:center;gap:0;}
+.ep-stepper-row{display:flex;align-items:center;width:100%;overflow:hidden;}
 .ep-step{
-  width:52px;height:52px;border-radius:var(--radius-sm);
+  width:52px;min-width:52px;height:52px;border-radius:var(--radius-sm);
   background:var(--bg-raised);border:1px solid var(--border);
   color:var(--text-primary);font-size:24px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
@@ -1038,7 +1038,7 @@ canvas.chart-canvas{width:100%;display:block;}
 }
 .ep-step:active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
 .ep-field-input{
-  flex:1;height:52px;text-align:center;
+  flex:1;min-width:0;height:52px;text-align:center;
   background:var(--bg-input);border:1px solid var(--border);
   border-left:none;border-right:none;
   color:#ffffff;font-family:var(--font-mono);font-size:28px;font-weight:700;
@@ -1075,8 +1075,8 @@ canvas.chart-canvas{width:100%;display:block;}
   letter-spacing:.1em;text-transform:uppercase;
 }
 .set-log-header,.set-log-row{
-  grid-template-columns: 32px 1fr 1fr 1fr 36px;
   align-items:center;
+  column-gap:0;
 }
 .set-log-row{
   display:grid;padding:0 16px;min-height:52px;
@@ -1093,7 +1093,7 @@ canvas.chart-canvas{width:100%;display:block;}
 .slr-prev{font-size:11px;color:var(--text-muted);}
 .slr-done{text-align:center;font-size:14px;color:var(--text-muted);}
 .set-log-row.done .slr-done{color:var(--accent);}
-.slh-num,.slh-weight,.slh-reps,.slh-prev,.slh-done{display:contents;}
+/* slh-* spans are direct grid children - no display:contents needed */
 
 /* PR star on set number */
 .set-log-row.done .slr-num:has(✓){}
@@ -2023,7 +2023,7 @@ canvas.chart-canvas{width:100%;display:block;}
   </div>
 </div>
 
-<script src="app.js?v=4"></script>
+<script src="app.js?v=5"></script>
 <script>
 // ── EXTRA WIRING — functions called from HTML that need DOM context ──
 

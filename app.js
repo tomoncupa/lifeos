@@ -1741,8 +1741,11 @@ function _renderSetList(sess) {
   const lastSess = getExerciseHistory(ex.name, currentTrainingDate)[0];
   const unit     = S.settings.trainingWeightUnit;
 
-  // Column header
-  let header = `<div class="set-log-header">
+  // Column header — grid columns depend on exercise type
+  const cols = isBW ? '28px 1fr 1fr 32px' : '28px 1fr 1fr 1fr 32px';
+  const colStyle = `style="grid-template-columns:${cols}"`;
+
+  let header = `<div class="set-log-header" ${colStyle}>
     <span class="slh-num">#</span>
     ${!isBW ? `<span class="slh-weight">${unit.toUpperCase()}</span>` : ''}
     <span class="slh-reps">REPS</span>
@@ -1755,7 +1758,7 @@ function _renderSetList(sess) {
     const isEditing = set.id === _editSetId;
     const prevTxt  = prev?.weight && prev?.reps ? `${prev.weight}×${prev.reps}` : prev?.reps ? `×${prev.reps}` : '—';
     return `<div class="set-log-row${set.done ? ' done' : ''}${isEditing ? ' editing' : ''}" 
-               onclick="editSet('${set.id}')">
+               ${colStyle} onclick="editSet('${set.id}')">
       <span class="slr-num">${set.isPR ? '★' : si + 1}</span>
       ${!isBW ? `<span class="slr-weight">${set.weight ?? '—'}</span>` : ''}
       <span class="slr-reps">${set.reps ?? '—'}</span>
