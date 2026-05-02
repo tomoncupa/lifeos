@@ -156,7 +156,7 @@ const DEFAULTS = {
   electrolyteMode: false,
   karmaEnabled: false,
   onboardingDone: false,
-  supabaseUrl: '',
+  supabaseUrl: 'https://ubzixngayizcycmfxmmj.supabase.co',
   supabaseKey: '',
   weightGoal: null,
   weightDeadline: null,
@@ -258,6 +258,7 @@ function _flush() {
     localStorage.setItem('sos_v3', JSON.stringify(S));
     S._dirty = false;
     syncDot('synced');
+    schedulePush();
   } catch(e) { syncDot('offline'); }
 }
 
@@ -291,6 +292,216 @@ window.addEventListener('beforeunload', () => { if (S._dirty) _flush(); });
 function syncDot(status) {
   const d = $('sync-dot');
   if (d) d.dataset.status = status;
+}
+
+// ================================================================
+// 6b. SUPABASE SYNC ENGINE
+// ================================================================
+const SB_URL = 'https://ubzixngayizcycmfxmmj.supabase.co';
+
+// Returns the anon key from settings (user pastes it in Config)
+function _sbKey() { return S.settings.supabaseKey || ''; }
+
+// Persistent anonymous session stored in localStorage
+const SB_SESSION_KEY = 'sos_sb_session';
+
+function _sbSession() {
+  try { return JSON.parse(localStorage.getItem(SB_SESSION_KEY)); } catch { return null; }
+}
+function _sbSaveSession(s) { localStorage.setItem(SB_SESSION_KEY, JSON.stringify(s)); }
+
+// Auth token — from session or attempt anon sign-in
+async function _sbToken() {
+  const sess = _sbSession();
+  if (sess?.access_token) {
+    // Refresh if expired (exp is in seconds)
+    const exp = sess.expires_at || 0;
+    if (Date.now() / 1000 < exp - 60) return sess.access_token;
+    // Refresh
+    const r = await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'apikey': _sbKey(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: sess.refresh_token }),
+    });
+    if (r.ok) {
+      const d = await r.json();
+      _sbSaveSession({ ...sess, access_token: d.access_token, refresh_token: d.refresh_token || sess.refresh_token, expires_at: Math.floor(Date.now()/1000) + (d.expires_in || 3600) });
+      return d.access_token;
+    }
+  }
+  // No session — sign in anonymously
+  if (!_sbKey()) return null;
+  const r = await fetch(`${SB_URL}/auth/v1/signup`, {
+    method: 'POST',
+    headers: { 'apikey': _sbKey(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  if (!r.ok) return null;
+  const d = await r.json();
+  _sbSaveSession({ access_token: d.access_token, refresh_token: d.refresh_token, expires_at: Math.floor(Date.now()/1000) + (d.expires_in || 3600) });
+  return d.access_token;
+}
+
+// Upsert a single row by matching user_id + the key column
+async function _sbUpsert(table, keyCol, keyVal, data) {
+  const token = await _sbToken();
+  if (!token) return false;
+  const body = { [keyCol]: keyVal, data, updated_at: new Date().toISOString() };
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?on_conflict=${keyCol}`, {
+    method: 'POST',
+    headers: {
+      'apikey': _sbKey(),
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates,return=minimal',
+    },
+    body: JSON.stringify(body),
+  });
+  return r.ok;
+}
+
+// Fetch all rows for the current user from a table
+async function _sbFetch(table) {
+  const token = await _sbToken();
+  if (!token) return null;
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?select=*&order=updated_at.desc`, {
+    headers: { 'apikey': _sbKey(), 'Authorization': `Bearer ${token}` },
+  });
+  if (!r.ok) return null;
+  return r.json();
+}
+
+// ── PUSH: local → Supabase ────────────────────────────────────────
+let _syncPending = false;
+let _syncTimer   = null;
+
+async function cloudPush() {
+  if (!_sbKey()) return;
+  if (_syncPending) return;
+  _syncPending = true;
+  syncDot('pending');
+  try {
+    const promises = [];
+    // Settings (single row per user)
+    promises.push(_sbUpsert('sos_settings', 'user_id', 'self', S.settings));
+    // Days
+    Object.entries(S.days).forEach(([date, day]) =>
+      promises.push(_sbUpsert('sos_days', 'date', date, day)));
+    // Training
+    Object.entries(S.training).forEach(([date, sess]) =>
+      promises.push(_sbUpsert('sos_training', 'date', date, sess)));
+    // Quests
+    S.quests.forEach(q =>
+      promises.push(_sbUpsert('sos_quests', 'quest_id', q.id, q)));
+    // Projects
+    S.projects.forEach(p =>
+      promises.push(_sbUpsert('sos_projects', 'project_id', p.id, p)));
+    // Weight log
+    S.weightLog.forEach(w =>
+      promises.push(_sbUpsert('sos_weight_log', 'date', w.date, { weight: w.weight })));
+    // Food DB
+    S.foodDB.forEach(f =>
+      promises.push(_sbUpsert('sos_food_db', 'food_id', f.id, f)));
+    // Trackers
+    S.trackers.forEach(t =>
+      promises.push(_sbUpsert('sos_trackers', 'tracker_id', t.id, t)));
+
+    await Promise.all(promises);
+    syncDot('synced');
+    localStorage.setItem('sos_last_push', Date.now().toString());
+  } catch(e) {
+    console.warn('Cloud push failed:', e);
+    syncDot('offline');
+  } finally {
+    _syncPending = false;
+  }
+}
+
+// ── PULL: Supabase → local (merge, remote wins on conflict) ───────
+async function cloudPull() {
+  if (!_sbKey()) return false;
+  syncDot('pending');
+  try {
+    const [days, training, quests, projects, weightLog, foodDB, settings, trackers] = await Promise.all([
+      _sbFetch('sos_days'),
+      _sbFetch('sos_training'),
+      _sbFetch('sos_quests'),
+      _sbFetch('sos_projects'),
+      _sbFetch('sos_weight_log'),
+      _sbFetch('sos_food_db'),
+      _sbFetch('sos_settings'),
+      _sbFetch('sos_trackers'),
+    ]);
+
+    // Merge days
+    if (days?.length) days.forEach(r => { S.days[r.date] = { ...S.days[r.date], ...r.data }; });
+    // Merge training
+    if (training?.length) training.forEach(r => { S.training[r.date] = { ...S.training[r.date], ...r.data }; });
+    // Merge quests (remote wins by id)
+    if (quests?.length) {
+      const remoteById = Object.fromEntries(quests.map(r => [r.quest_id, r.data]));
+      S.quests = S.quests.map(q => remoteById[q.id] ? { ...q, ...remoteById[q.id] } : q);
+      // Add any remote quests that don't exist locally
+      quests.forEach(r => { if (!S.quests.find(q => q.id === r.quest_id)) S.quests.push(r.data); });
+    }
+    // Merge projects
+    if (projects?.length) {
+      const remoteById = Object.fromEntries(projects.map(r => [r.project_id, r.data]));
+      S.projects = S.projects.map(p => remoteById[p.id] ? { ...p, ...remoteById[p.id] } : p);
+      projects.forEach(r => { if (!S.projects.find(p => p.id === r.project_id)) S.projects.push(r.data); });
+    }
+    // Weight log (remote wins by date)
+    if (weightLog?.length) {
+      weightLog.forEach(r => {
+        const idx = S.weightLog.findIndex(w => w.date === r.date);
+        if (idx >= 0) S.weightLog[idx].weight = r.weight;
+        else S.weightLog.push({ date: r.date, weight: r.weight });
+      });
+      S.weightLog.sort((a,b) => a.date < b.date ? -1 : 1);
+    }
+    // Food DB
+    if (foodDB?.length) {
+      foodDB.forEach(r => { if (!S.foodDB.find(f => f.id === r.food_id)) S.foodDB.push(r.data); });
+    }
+    // Settings (remote wins, preserve local supabase keys)
+    if (settings?.length) {
+      const sbUrl = S.settings.supabaseUrl;
+      const sbKey = S.settings.supabaseKey;
+      S.settings = { ...DEFAULTS, ...settings[0].data, supabaseUrl: sbUrl, supabaseKey: sbKey };
+    }
+    // Trackers
+    if (trackers?.length) {
+      trackers.forEach(r => { if (!S.trackers.find(t => t.id === r.tracker_id)) S.trackers.push(r.data); });
+    }
+
+    save(true);
+    syncDot('synced');
+    localStorage.setItem('sos_last_pull', Date.now().toString());
+    return true;
+  } catch(e) {
+    console.warn('Cloud pull failed:', e);
+    syncDot('offline');
+    return false;
+  }
+}
+
+// Auto-push 5s after every local save (debounced)
+function schedulePush() {
+  if (!_sbKey()) return;
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(cloudPush, 5000);
+}
+
+// Manual sync button handler
+async function manualSync() {
+  const btn = $('sync-dot');
+  if (btn) btn.dataset.status = 'pending';
+  const pulled = await cloudPull();
+  if (pulled) {
+    await cloudPush();
+    if (currentSection) nav(currentSection); // re-render current view
+    SFX.save();
+  }
 }
 
 // ================================================================
@@ -2907,6 +3118,10 @@ function boot() {
   if (appEl) appEl.classList.add('visible');
   // Reset currentSection so nav() always renders on first call
   currentSection = null;
+  // Pull from cloud on boot (non-blocking — UI renders immediately)
+  if (S.settings.supabaseKey) {
+    cloudPull().then(pulled => { if (pulled && currentSection) nav(currentSection); });
+  }
   try {
     nav('daily');
   } catch(e) {

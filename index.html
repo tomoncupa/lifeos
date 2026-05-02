@@ -1267,7 +1267,7 @@ canvas.chart-canvas{width:100%;display:block;}
     <div class="topbar-right">
       <div class="streak-pill">🔥 <span id="topbar-streak">0</span></div>
       <div class="topbar-rank" id="topbar-rank" onclick="openPMDebrief()" title="Open PM Debrief">—</div>
-      <div class="sync-dot" id="sync-dot" data-status="synced"></div>
+      <div class="sync-dot" id="sync-dot" data-status="synced" onclick="nav('settings')" title="Cloud sync status — tap to open settings" style="cursor:pointer;"></div>
     </div>
   </div>
 
@@ -1804,6 +1804,27 @@ canvas.chart-canvas{width:100%;display:block;}
           <div class="settings-lbl">Anon Key</div>
           <input id="set-sb-key" class="settings-inp wide" style="width:100%;text-align:left;" type="password" placeholder="eyJ..." onchange="saveSetting('supabaseKey',this.value)"/>
         </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-lbl">Sync Now</div>
+            <div class="settings-sub" id="sync-status-lbl">Pull from cloud then push local</div>
+          </div>
+          <button class="btn-ghost small" onclick="manualSync().then(()=>{const l=$('sync-status-lbl');if(l)l.textContent='Synced '+new Date().toLocaleTimeString();})">⟳ Sync</button>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-lbl">Push to Cloud</div>
+            <div class="settings-sub">Force upload all local data</div>
+          </div>
+          <button class="btn-ghost small" onclick="cloudPush().then(()=>{SFX.save();const l=$('sync-status-lbl');if(l)l.textContent='Pushed '+new Date().toLocaleTimeString();})">↑ Push</button>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-lbl">Pull from Cloud</div>
+            <div class="settings-sub">Overwrite local with cloud data</div>
+          </div>
+          <button class="btn-ghost small" onclick="if(confirm('Pull from cloud? Local changes since last sync may be overwritten.'))cloudPull().then(r=>{if(r){nav(currentSection);SFX.save();}})">↓ Pull</button>
+        </div>
       </div>
 
       <div class="settings-group">
@@ -2023,7 +2044,7 @@ canvas.chart-canvas{width:100%;display:block;}
   </div>
 </div>
 
-<script src="app.js?v=5"></script>
+<script src="app.js?v=6"></script>
 <script>
 // ── EXTRA WIRING — functions called from HTML that need DOM context ──
 
