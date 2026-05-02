@@ -378,8 +378,44 @@ function isTrainedToday(date) {
 // ================================================================
 // 8. TRAINING HELPERS
 // ================================================================
+
+// Exercise types — mirrors FitNotes ExerciseType enum
+const EX_TYPE = {
+  WEIGHT_AND_REPS:     'weight_reps',
+  BODYWEIGHT_REPS:     'bodyweight_reps',
+  WEIGHTED_BODYWEIGHT: 'weighted_bodyweight',
+  ASSISTED_BODYWEIGHT: 'assisted_bodyweight',
+  REPS_ONLY:           'reps_only',
+  CARDIO:              'cardio',
+};
+
+const BW_EXERCISES = new Set([
+  'Pull Ups','Chin Ups','Parallel Pull Ups','Assisted Pull Ups','Assisted Chin Ups',
+  'Assisted Parallel Pull Ups','Weighted Pull Ups','Push Ups','Tricep Push Ups',
+  'Wall Push Ups','Incline Push Ups','Decline Push Ups','Deficit Push Ups',
+  'Incline Deficit Push Ups','Decline Deficit Push Ups','Kneeling Push Ups',
+  'Tricep Dips','Chest Dips','Inverted Row','Reverse Row',
+  'BW Squats','Step Ups','Walking Lunges','Superior Lunges','Knee Raise',
+  'Hanging Knee Raise','Hanging Straight Leg Raise','Glute Ham Raise',
+]);
+
+function defaultExType(name) {
+  if (BW_EXERCISES.has(name)) return EX_TYPE.BODYWEIGHT_REPS;
+  return EX_TYPE.WEIGHT_AND_REPS;
+}
+
+function freshSet(overrides) {
+  return { id: uid(), weight: null, reps: null, done: false, isPR: false, ...overrides };
+}
+
+function freshExerciseEntry(name, overrides) {
+  return { name, type: defaultExType(name), oneOff: false, sets: [freshSet()], notes: '', ...overrides };
+}
+
 function getSession(date) {
-  if (!S.training[date]) S.training[date] = { date, exercises: [], sessionTimer: 0, notes: '' };
+  if (!S.training[date]) {
+    S.training[date] = { date, exercises: [], sessionTimer: 0, notes: '', startTime: null };
+  }
   return S.training[date];
 }
 
@@ -388,12 +424,24 @@ function calc1RM(weight, reps) {
   return Math.round(weight * (1 + reps / 30));
 }
 
-function getExerciseHistory(name, beforeDate) {
+function getExerciseHistory(name, beforeDate, limit = 5) {
   return Object.entries(S.training)
     .filter(([d, sess]) => d < beforeDate && sess.exercises.some(e => e.name === name))
-    .sort((a,b) => b[0] < a[0] ? -1 : 1)
-    .slice(0, 5)
+    .sort((a, b) => b[0] < a[0] ? -1 : 1)
+    .slice(0, limit)
     .map(([date, sess]) => ({ date, ex: sess.exercises.find(e => e.name === name) }));
+}
+
+function getPRGrid(name) {
+  const grid = {};
+  Object.entries(S.training).forEach(([date, sess]) => {
+    sess.exercises.filter(e => e.name === name).forEach(ex => {
+      ex.sets.filter(s => s.done && s.weight && s.reps).forEach(s => {
+        if (!grid[s.reps] || s.weight > grid[s.reps].weight) grid[s.reps] = { weight: s.weight, date };
+      });
+    });
+  });
+  return grid;
 }
 
 function getPersonalBest(name) {
@@ -402,11 +450,61 @@ function getPersonalBest(name) {
     sess.exercises.filter(e => e.name === name).forEach(ex => {
       ex.sets.filter(s => s.done && s.weight && s.reps).forEach(s => {
         const r = calc1RM(s.weight, s.reps);
-        if (!best || r > best.oneRM) best = { weight: s.weight, reps: s.reps, oneRM: r };
+        if (!best || r > best.oneRM) best = { weight: s.weight, reps: s.reps, oneRM: r, date: sess.date };
       });
     });
   });
   return best;
+}
+
+function getExerciseProgressData(name) {
+  return Object.entries(S.training)
+    .filter(([, sess]) => sess.exercises.some(e => e.name === name))
+    .sort((a, b) => a[0] < b[0] ? -1 : 1)
+    .map(([date, sess]) => {
+      const ex = sess.exercises.find(e => e.name === name);
+      const doneSets = ex.sets.filter(s => s.done && s.weight && s.reps);
+      if (!doneSets.length) return null;
+      const maxWeight = Math.max(...doneSets.map(s => s.weight));
+      const totalVolume = doneSets.reduce((sum, s) => sum + s.weight * s.reps, 0);
+      const best = doneSets.reduce((b, s) => calc1RM(s.weight, s.reps) > calc1RM(b.weight, b.reps) ? s : b);
+      return { date, maxWeight, totalVolume, e1RM: calc1RM(best.weight, best.reps) };
+    })
+    .filter(Boolean);
+}
+
+function getSessionVolume(sess) {
+  let vol = 0, sets = 0;
+  sess.exercises.forEach(ex => {
+    ex.sets.forEach(s => {
+      if (s.done && s.weight && s.reps) { vol += s.weight * s.reps; sets++; }
+    });
+  });
+  return { vol: Math.round(vol), sets };
+}
+
+function markPRs(name, date) {
+  const sess = S.training[date];
+  if (!sess) return;
+  const ex = sess.exercises.find(e => e.name === name);
+  if (!ex) return;
+  const grid = {};
+  Object.entries(S.training).forEach(([d, s]) => {
+    if (d >= date) return;
+    s.exercises.filter(e => e.name === name).forEach(e => {
+      e.sets.filter(s => s.done && s.weight && s.reps).forEach(s => {
+        if (!grid[s.reps] || s.weight > grid[s.reps]) grid[s.reps] = s.weight;
+      });
+    });
+  });
+  ex.sets.forEach(s => {
+    s.isPR = !!(s.done && s.weight && s.reps && (!grid[s.reps] || s.weight > grid[s.reps]));
+  });
+}
+
+function isTrainedToday(date) {
+  const sess = S.training[date];
+  return !!(sess && sess.exercises && sess.exercises.some(ex => ex.sets.some(s => s.done)));
 }
 
 function getMuscleDays() {
@@ -1429,174 +1527,532 @@ function updateQuestField(id, field, value) {
   renderQuestList();
 }
 
+
 // ================================================================
-// 21. TRAINING RENDER
+// 21. TRAINING RENDER — FitNotes-faithful rebuild
 // ================================================================
-let activeMuscleSplit = null;
+
+// State for the active exercise being logged
+let _activeExIdx = null;   // index into sess.exercises, or null
+let _editSetId   = null;   // set.id being edited, or null (null = new set)
+let _graphExName = null;   // exercise name shown in graph view
 
 function renderTraining() {
-  const sess = getSession(currentTrainingDate);
+  const sess    = getSession(currentTrainingDate);
   const isToday = currentTrainingDate === todayISO();
-
   setText('training-date', isToday ? 'TODAY' : fmtDate(currentTrainingDate).toUpperCase());
   $('training-next-date')?.classList.toggle('hidden', isToday);
-
-  // Session timer display
   setText('session-timer-text', '00:00');
 
-  // Muscle heatmap
-
-  // Exercise list
-  renderExerciseList(sess);
-
-  // Copy past session button
+  _renderRoutineBar(sess);
+  _renderExerciseDrawer(sess);
+  _renderEntryPanel(sess);
+  _renderSetList(sess);
+  _renderSessionFooter(sess);
   updateCopySessionBtn();
 }
 
-function renderMuscleHeatmap() {} // removed
-
-function filterBySplit(group) {
-  activeMuscleSplit = activeMuscleSplit === group ? null : group;
-  openModal('modal-add-exercise');
-  renderExercisePickerForGroup(activeMuscleSplit || 'ALL');
+// ── ROUTINE BAR (exercise list as pill-tabs across top) ─────────
+function _renderRoutineBar(sess) {
+  const bar = $('routine-bar');
+  if (!bar) return;
+  if (!sess.exercises.length) { bar.innerHTML = ''; return; }
+  bar.innerHTML = sess.exercises.map((ex, i) => {
+    const doneSets = ex.sets.filter(s => s.done).length;
+    const active   = i === _activeExIdx;
+    return `<button class="routine-pill${active ? ' active' : ''}" onclick="selectExercise(${i})">
+      <span class="rp-name">${esc(ex.name)}</span>
+      ${doneSets ? `<span class="rp-sets">${doneSets}</span>` : ''}
+    </button>`;
+  }).join('');
 }
 
-function renderExerciseList(sess) {
+// ── EXERCISE DRAWER (left-side exercise list — visible when no active ex) ─
+function _renderExerciseDrawer(sess) {
   const list = $('exercise-list');
   if (!list) return;
+  if (_activeExIdx !== null) { list.style.display = 'none'; return; }
+  list.style.display = '';
   if (!sess.exercises.length) {
     list.innerHTML = `<div class="training-empty">
       <div class="training-empty-icon">💪</div>
-      <div>No exercises logged</div>
-      <div class="training-empty-sub">Tap + to begin the session, Player.</div>
+      <div>No exercises yet</div>
+      <div class="training-empty-sub">Search or pick an exercise below to begin</div>
     </div>`;
     return;
   }
-  list.innerHTML = '';
-  sess.exercises.forEach((ex, idx) => list.appendChild(buildExerciseCard(ex, idx, sess)));
-}
-
-function buildExerciseCard(ex, idx, sess) {
-  const card = el('div', 'exercise-card');
-  const hist = getExerciseHistory(ex.name, currentTrainingDate);
-  const pb = getPersonalBest(ex.name);
-  const vol = ex.sets.filter(s=>s.done&&s.weight&&s.reps).reduce((sum,s)=>sum+s.weight*s.reps,0);
-  const lastSess = hist[0];
-
-  card.innerHTML = `
-    <div class="ex-header">
-      <div class="ex-title-wrap">
-        <div class="ex-name">${esc(ex.name)}</div>
-        ${pb ? `<div class="ex-pb">PB: ${pb.weight}${S.settings.trainingWeightUnit} × ${pb.reps} (1RM ~${pb.oneRM}${S.settings.trainingWeightUnit})</div>` : ''}
-        ${lastSess ? `<div class="ex-last">Last: ${fmtDateShort(lastSess.date)} · ${lastSess.ex.sets.length} sets · best ${lastSess.ex.sets.filter(s=>s.done&&s.weight).sort((a,b)=>b.weight-a.weight)[0]?.weight||'—'}${S.settings.trainingWeightUnit}</div>` : ''}
+  list.innerHTML = sess.exercises.map((ex, i) => {
+    const done  = ex.sets.filter(s => s.done).length;
+    const total = ex.sets.length;
+    const vol   = ex.sets.filter(s => s.done && s.weight && s.reps)
+                         .reduce((sum, s) => sum + s.weight * s.reps, 0);
+    return `<div class="ex-drawer-row" onclick="selectExercise(${i})">
+      <div class="ex-drawer-left">
+        <div class="ex-drawer-name">${esc(ex.name)}</div>
+        <div class="ex-drawer-meta">${done}/${total} sets${vol ? ' · ' + Math.round(vol) + ' ' + S.settings.trainingWeightUnit : ''}</div>
       </div>
-      <button class="ex-remove" onclick="removeExercise(${idx})">×</button>
-    </div>
-    <div class="sets-header">
-      <span>Set</span><span>${S.settings.trainingWeightUnit.toUpperCase()}</span><span>Reps</span><span>RIR</span><span>✓</span>
-    </div>
-    <div id="sets-${idx}" class="sets-list">${renderSetsHTML(ex, idx, lastSess)}</div>
-    <div class="ex-footer">
-      <button class="btn-ghost" onclick="addSet(${idx})">+ Set</button>
-      ${vol > 0 ? `<span class="ex-volume">${Math.round(vol)} ${S.settings.trainingWeightUnit} vol</span>` : ''}
-      ${ex.sets.filter(s=>s.done&&s.weight&&s.reps).length > 0 ?
-        `<span class="ex-1rm">e1RM: ${calc1RM(Math.max(...ex.sets.filter(s=>s.done&&s.weight&&s.reps).map(s=>s.weight)), ex.sets.find(s=>s.done&&s.weight&&s.reps)?.reps||1)}${S.settings.trainingWeightUnit}</span>` : ''}
-    </div>
-    <textarea class="ex-notes" placeholder="Session notes..." onchange="updateExNotes(${idx},this.value)">${esc(ex.notes||'')}</textarea>`;
-
-  return card;
-}
-
-function renderSetsHTML(ex, exIdx, lastSess) {
-  return ex.sets.map((set, si) => {
-    const ghost = lastSess?.ex.sets[si];
-    return `<div class="set-row" id="set-${exIdx}-${si}">
-      <span class="set-num">${si+1}</span>
-      <input class="set-inp weight" type="number" step="0.5" min="0"
-        value="${set.weight||''}" placeholder="${ghost?.weight||''}"
-        onchange="updateSet(${exIdx},${si},'weight',+this.value)" />
-      <input class="set-inp reps" type="number" min="0"
-        value="${set.reps||''}" placeholder="${ghost?.reps||''}"
-        onchange="updateSet(${exIdx},${si},'reps',+this.value)" />
-      <input class="set-inp rir" type="number" min="0" max="10"
-        value="${set.rir!==undefined?set.rir:''}" placeholder="—"
-        onchange="updateSet(${exIdx},${si},'rir',+this.value)" />
-      <button class="set-done-btn ${set.done?'done':''}" onclick="toggleSetDone(${exIdx},${si})">
-        ${set.done ? '✓' : '○'}
-      </button>
+      <div class="ex-drawer-right">
+        <button class="ex-drawer-del" onclick="event.stopPropagation();removeExercise(${i})">×</button>
+      </div>
     </div>`;
   }).join('');
 }
 
-function addSet(exIdx) {
-  const sess = getSession(currentTrainingDate);
-  sess.exercises[exIdx].sets.push({ weight: null, reps: null, rir: null, done: false });
-  save();
-  const container = $('sets-' + exIdx);
-  const lastSess = getExerciseHistory(sess.exercises[exIdx].name, currentTrainingDate)[0];
-  if (container) container.innerHTML = renderSetsHTML(sess.exercises[exIdx], exIdx, lastSess);
+// ── ENTRY PANEL (weight/reps steppers + SAVE/CLEAR) ─────────────
+function _renderEntryPanel(sess) {
+  const panel = $('entry-panel');
+  if (!panel) return;
+  if (_activeExIdx === null || !sess.exercises[_activeExIdx]) {
+    panel.style.display = 'none'; return;
+  }
+  panel.style.display = '';
+  const ex      = sess.exercises[_activeExIdx];
+  const isEdit  = _editSetId !== null;
+  const editSet = isEdit ? ex.sets.find(s => s.id === _editSetId) : null;
+  const isBW    = ex.type === EX_TYPE.BODYWEIGHT_REPS || ex.type === EX_TYPE.REPS_ONLY;
+  const lastSess = getExerciseHistory(ex.name, currentTrainingDate)[0];
+  const lastSet  = lastSess?.ex?.sets?.filter(s => s.done)?.[0];
+
+  const wVal = editSet ? (editSet.weight ?? '') : (_draftWeight ?? lastSet?.weight ?? '');
+  const rVal = editSet ? (editSet.reps   ?? '') : (_draftReps   ?? lastSet?.reps   ?? '');
+
+  $('entry-ex-name').textContent = ex.name;
+  $('entry-ex-back').style.display = '';
+
+  // Weight field
+  const wBlock = $('entry-weight-block');
+  if (wBlock) wBlock.style.display = isBW ? 'none' : '';
+  if (!isBW) setVal('entry-weight', wVal);
+
+  // Reps field
+  setVal('entry-reps', rVal);
+
+  // Button label
+  const saveBtn = $('entry-save-btn');
+  if (saveBtn) saveBtn.textContent = isEdit ? 'UPDATE' : 'SAVE SET';
+  const clearBtn = $('entry-clear-btn');
+  if (clearBtn) clearBtn.textContent = isEdit ? 'DELETE' : 'CLEAR';
+
+  // Hints: PB and last session
+  const pb = getPersonalBest(ex.name);
+  let hint = '';
+  if (pb)      hint += `PB: ${pb.weight}${S.settings.trainingWeightUnit} × ${pb.reps} — e1RM ~${pb.oneRM}${S.settings.trainingWeightUnit}`;
+  if (lastSess) {
+    const ls = lastSess.ex.sets.filter(s => s.done && s.weight);
+    if (ls.length) hint += (hint ? '   ·   ' : '') + `Last: ${fmtDateShort(lastSess.date)} — ${ls.map(s => `${s.weight}×${s.reps}`).join(', ')}`;
+  }
+  setText('entry-hint', hint);
 }
 
-function updateSet(exIdx, setIdx, field, val) {
-  const sess = getSession(currentTrainingDate);
-  sess.exercises[exIdx].sets[setIdx][field] = val;
-  save();
+// Draft values persist while adding multiple sets to same exercise
+let _draftWeight = null;
+let _draftReps   = null;
+
+function _onEntryInput() {
+  _draftWeight = parseFloat($('entry-weight')?.value) || null;
+  _draftReps   = parseInt($('entry-reps')?.value)    || null;
 }
 
-function toggleSetDone(exIdx, setIdx) {
+// ── SAVE / CLEAR / UPDATE / DELETE ──────────────────────────────
+function saveSet() {
   const sess = getSession(currentTrainingDate);
-  const set = sess.exercises[exIdx].sets[setIdx];
-  set.done = !set.done;
-  save();
-  SFX.check();
+  if (_activeExIdx === null) return;
+  const ex = sess.exercises[_activeExIdx];
+  if (!ex) return;
 
-  // Auto-start rest timer
-  if (set.done && S.settings.restTimerAuto) {
-    startRestTimer(S.settings.restTimerDuration || 120);
+  const isBW   = ex.type === EX_TYPE.BODYWEIGHT_REPS || ex.type === EX_TYPE.REPS_ONLY;
+  const weight = isBW ? null : (parseFloat($('entry-weight')?.value) || null);
+  const reps   = parseInt($('entry-reps')?.value) || null;
+  if (!reps) { SFX.error(); return; }
+
+  if (_editSetId !== null) {
+    // UPDATE existing set
+    const set = ex.sets.find(s => s.id === _editSetId);
+    if (set) { set.weight = weight; set.reps = reps; set.done = true; }
+    _editSetId = null;
+  } else {
+    // SAVE new set — reuse the last empty slot or push
+    const empty = ex.sets.find(s => !s.done && !s.reps);
+    if (empty) { empty.weight = weight; empty.reps = reps; empty.done = true; }
+    else ex.sets.push(freshSet({ weight, reps, done: true }));
+    _draftWeight = weight;
+    _draftReps   = reps;
   }
 
-  // Re-render just that set
-  const setEl = $(`set-${exIdx}-${setIdx}`);
-  if (setEl) {
-    const btn = setEl.querySelector('.set-done-btn');
-    if (btn) { btn.textContent = set.done ? '✓' : '○'; btn.classList.toggle('done', set.done); }
-  }
+  markPRs(ex.name, currentTrainingDate);
 
-  // Update trained on daily
+  // Update trained flag
   const day = getDay(currentTrainingDate);
   day.trained = isTrainedToday(currentTrainingDate);
   if (currentSection === 'daily') updateDailyChecks(day);
 
-  // Start session timer on first set
-  if (!_sessionTimer && set.done) startSessionTimer();
+  if (!_sessionTimer) startSessionTimer();
+  save();
+  SFX.check();
+  _renderSetList(sess);
+  _renderRoutineBar(sess);
+  _renderSessionFooter(sess);
+  _renderEntryPanel(sess); // refresh hint + clear edit state
+  spawnParticles('💪', 2);
 }
 
-function updateExNotes(exIdx, val) {
+function clearEntry() {
+  if (_editSetId !== null) {
+    // DELETE mode
+    const sess = getSession(currentTrainingDate);
+    const ex   = sess.exercises[_activeExIdx];
+    if (ex) ex.sets = ex.sets.filter(s => s.id !== _editSetId);
+    _editSetId = null;
+    save();
+    _renderSetList(sess);
+    _renderRoutineBar(sess);
+    _renderSessionFooter(sess);
+  } else {
+    // CLEAR draft
+    _draftWeight = null;
+    _draftReps   = null;
+    if ($('entry-weight')) $('entry-weight').value = '';
+    if ($('entry-reps'))   $('entry-reps').value   = '';
+  }
+  _renderEntryPanel(getSession(currentTrainingDate));
+}
+
+// Adjust weight/reps with stepper buttons
+function stepField(field, delta) {
+  const inp  = $(field);
+  if (!inp) return;
+  const step = field === 'entry-weight' ? (S.settings.trainingWeightUnit === 'lbs' ? 5 : 2.5) : 1;
+  const cur  = parseFloat(inp.value) || 0;
+  inp.value  = Math.max(0, Math.round((cur + delta * step) * 100) / 100);
+  _onEntryInput();
+}
+
+// ── SET LOG LIST ─────────────────────────────────────────────────
+function _renderSetList(sess) {
+  const listEl = $('set-log-list');
+  if (!listEl) return;
+
+  if (_activeExIdx === null || !sess.exercises[_activeExIdx]) {
+    listEl.innerHTML = ''; return;
+  }
+
+  const ex       = sess.exercises[_activeExIdx];
+  const isBW     = ex.type === EX_TYPE.BODYWEIGHT_REPS || ex.type === EX_TYPE.REPS_ONLY;
+  const lastSess = getExerciseHistory(ex.name, currentTrainingDate)[0];
+  const unit     = S.settings.trainingWeightUnit;
+
+  // Column header
+  let header = `<div class="set-log-header">
+    <span class="slh-num">#</span>
+    ${!isBW ? `<span class="slh-weight">${unit.toUpperCase()}</span>` : ''}
+    <span class="slh-reps">REPS</span>
+    <span class="slh-prev">PREV</span>
+    <span class="slh-done">✓</span>
+  </div>`;
+
+  const rows = ex.sets.map((set, si) => {
+    const prev     = lastSess?.ex?.sets?.[si];
+    const isEditing = set.id === _editSetId;
+    const prevTxt  = prev?.weight && prev?.reps ? `${prev.weight}×${prev.reps}` : prev?.reps ? `×${prev.reps}` : '—';
+    return `<div class="set-log-row${set.done ? ' done' : ''}${isEditing ? ' editing' : ''}" 
+               onclick="editSet('${set.id}')">
+      <span class="slr-num">${set.isPR ? '★' : si + 1}</span>
+      ${!isBW ? `<span class="slr-weight">${set.weight ?? '—'}</span>` : ''}
+      <span class="slr-reps">${set.reps ?? '—'}</span>
+      <span class="slr-prev">${esc(prevTxt)}</span>
+      <span class="slr-done">${set.done ? '✓' : '○'}</span>
+    </div>`;
+  }).join('');
+
+  // History from last session (ghost reference below rows)
+  let histBlock = '';
+  if (lastSess) {
+    const donePrev = lastSess.ex.sets.filter(s => s.done && (s.weight || s.reps));
+    if (donePrev.length) {
+      histBlock = `<div class="set-log-history">
+        <span class="slh-label">LAST SESSION (${fmtDateShort(lastSess.date)})</span>
+        ${donePrev.map(s => `<span class="slh-set">${s.weight ? s.weight + '×' : ''}${s.reps}</span>`).join('')}
+      </div>`;
+    }
+  }
+
+  listEl.innerHTML = header + rows + histBlock;
+}
+
+function editSet(setId) {
   const sess = getSession(currentTrainingDate);
-  sess.exercises[exIdx].notes = val;
+  const ex   = sess.exercises[_activeExIdx];
+  if (!ex) return;
+  const set  = ex.sets.find(s => s.id === setId);
+  if (!set || !set.done) return; // tap undone set → do nothing
+  _editSetId = setId;
+  _renderEntryPanel(sess);
+  _renderSetList(sess);
+  // Populate fields
+  if ($('entry-weight')) $('entry-weight').value = set.weight ?? '';
+  if ($('entry-reps'))   $('entry-reps').value   = set.reps   ?? '';
+}
+
+// ── SESSION FOOTER (volume + graph button) ───────────────────────
+function _renderSessionFooter(sess) {
+  const footer = $('session-footer');
+  if (!footer) return;
+  const { vol, sets } = getSessionVolume(sess);
+  if (!sets) { footer.style.display = 'none'; return; }
+  footer.style.display = '';
+  footer.innerHTML = `
+    <div class="sf-vol">
+      <span class="sf-val">${vol.toLocaleString()}</span>
+      <span class="sf-unit">${S.settings.trainingWeightUnit} total volume</span>
+    </div>
+    <span class="sf-sets">${sets} set${sets !== 1 ? 's' : ''} logged</span>
+  `;
+}
+
+// ── EXERCISE SELECTION ────────────────────────────────────────────
+function selectExercise(idx) {
+  _activeExIdx = idx;
+  _editSetId   = null;
+  _draftWeight = null;
+  _draftReps   = null;
+  const sess = getSession(currentTrainingDate);
+  const ex   = sess.exercises[idx];
+  if (ex) {
+    // Pre-fill draft from last session
+    const last = getExerciseHistory(ex.name, currentTrainingDate)[0];
+    if (last) {
+      const lastDone = last.ex.sets.filter(s => s.done && s.weight);
+      if (lastDone.length) {
+        _draftWeight = lastDone[lastDone.length - 1].weight;
+        _draftReps   = lastDone[lastDone.length - 1].reps;
+      }
+    }
+  }
+  renderTraining();
+}
+
+function backToExerciseList() {
+  _activeExIdx = null;
+  _editSetId   = null;
+  _draftWeight = null;
+  _draftReps   = null;
+  renderTraining();
+}
+
+function addExerciseToSession(name) {
+  const sess = getSession(currentTrainingDate);
+  if (sess.exercises.find(e => e.name === name && !e.oneOff)) {
+    // Already exists — just select it
+    const idx = sess.exercises.findIndex(e => e.name === name);
+    selectExercise(idx);
+    const searchEl = $('exercise-search');
+    if (searchEl) { searchEl.value = ''; $('ex-search-results')?.classList.remove('open'); }
+    return;
+  }
+  sess.exercises.push(freshExerciseEntry(name));
+  const day = getDay(currentTrainingDate);
+  day.trained = true;
   save();
+  SFX.save();
+  if (!_sessionTimer) startSessionTimer();
+  const searchEl = $('exercise-search');
+  if (searchEl) { searchEl.value = ''; $('ex-search-results')?.classList.remove('open'); }
+  selectExercise(sess.exercises.length - 1);
+}
+
+function addOneOffExercise(name) {
+  const trimmed = name.trim();
+  if (!trimmed) return;
+  const sess = getSession(currentTrainingDate);
+  sess.exercises.push(freshExerciseEntry(trimmed, { oneOff: true }));
+  const day = getDay(currentTrainingDate);
+  day.trained = true;
+  save();
+  SFX.save();
+  if (!_sessionTimer) startSessionTimer();
+  const searchEl = $('exercise-search');
+  if (searchEl) { searchEl.value = ''; $('ex-search-results')?.classList.remove('open'); }
+  selectExercise(sess.exercises.length - 1);
 }
 
 function removeExercise(exIdx) {
+  if (_activeExIdx === exIdx) { _activeExIdx = null; _editSetId = null; }
+  else if (_activeExIdx > exIdx) _activeExIdx--;
   const sess = getSession(currentTrainingDate);
   sess.exercises.splice(exIdx, 1);
   save();
   renderTraining();
 }
 
-function addExerciseToSession(name) {
-  const sess = getSession(currentTrainingDate);
-  if (sess.exercises.find(e => e.name === name)) { closeModal('modal-add-exercise'); return; }
-  sess.exercises.push({ name, sets: [{ weight: null, reps: null, rir: null, done: false }], notes: '' });
-  // Sync trained to daily
-  const day = getDay(currentTrainingDate);
-  day.trained = true;
-  if (currentTrainingDate === todayISO()) { save(); if (currentSection === 'daily') updateDailyChecks(day); }
-  save();
-  closeModal('modal-add-exercise');
-  renderTraining();
-  SFX.save();
-  if (!_sessionTimer) startSessionTimer();
+// ── PROGRESS GRAPH ────────────────────────────────────────────────
+let _graphMode = 'maxWeight'; // 'maxWeight' | 'volume' | 'e1RM'
+
+function openExerciseGraph(name) {
+  _graphExName = name;
+  renderExerciseGraph();
+  openModal('modal-exercise-graph');
+}
+
+function renderExerciseGraph() {
+  const canvas = $('graph-canvas');
+  if (!canvas || !_graphExName) return;
+  const data = getExerciseProgressData(_graphExName);
+  setText('graph-ex-name', _graphExName);
+
+  // Mode tabs
+  document.querySelectorAll('.graph-mode-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === _graphMode);
+  });
+
+  if (data.length < 2) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setText('graph-empty', 'Not enough data yet');
+    $('graph-empty').style.display = '';
+    return;
+  }
+  if ($('graph-empty')) $('graph-empty').style.display = 'none';
+
+  const vals = data.map(d => _graphMode === 'volume' ? d.totalVolume : _graphMode === 'e1RM' ? d.e1RM : d.maxWeight);
+  _drawLineGraph(canvas, data.map(d => d.date), vals);
+
+  // PR grid below graph
+  _renderPRGrid(_graphExName);
+}
+
+function _drawLineGraph(canvas, labels, vals) {
+  const dpr = window.devicePixelRatio || 1;
+  const W   = canvas.offsetWidth  || 320;
+  const H   = canvas.offsetHeight || 180;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { top: 16, right: 16, bottom: 28, left: 44 };
+  const gW  = W - pad.left - pad.right;
+  const gH  = H - pad.top  - pad.bottom;
+
+  const minV = Math.min(...vals) * 0.95;
+  const maxV = Math.max(...vals) * 1.05;
+  const range = maxV - minV || 1;
+
+  const xStep = gW / (vals.length - 1 || 1);
+  const yScale = v => pad.top + gH - ((v - minV) / range) * gH;
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (gH / 4) * i;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + gW, y); ctx.stroke();
+    const label = Math.round(maxV - (range / 4) * i);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(label, pad.left - 4, y + 3);
+  }
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + gH);
+  const accentRgb = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#00d4aa';
+  grad.addColorStop(0, accentRgb.replace(')', ', 0.3)').replace('rgb', 'rgba'));
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+
+  ctx.beginPath();
+  vals.forEach((v, i) => {
+    const x = pad.left + i * xStep;
+    const y = yScale(v);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.lineTo(pad.left + (vals.length - 1) * xStep, pad.top + gH);
+  ctx.lineTo(pad.left, pad.top + gH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.strokeStyle = accentRgb;
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  vals.forEach((v, i) => {
+    const x = pad.left + i * xStep;
+    const y = yScale(v);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Dots + gold for PRs
+  let runMax = -Infinity;
+  vals.forEach((v, i) => {
+    const x   = pad.left + i * xStep;
+    const y   = yScale(v);
+    const isPR = v > runMax;
+    if (isPR) runMax = v;
+    ctx.beginPath();
+    ctx.arc(x, y, isPR ? 4 : 3, 0, Math.PI * 2);
+    ctx.fillStyle = isPR ? 'var(--gold-bright, #f0c040)' : accentRgb;
+    ctx.fill();
+  });
+
+  // X axis labels (first and last)
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText(fmtDateShort(labels[0]), pad.left, H - 6);
+  ctx.textAlign = 'right';
+  ctx.fillText(fmtDateShort(labels[labels.length - 1]), pad.left + gW, H - 6);
+}
+
+function _renderPRGrid(name) {
+  const grid = getPRGrid(name);
+  const container = $('pr-grid');
+  if (!container) return;
+  const reps = Object.keys(grid).map(Number).sort((a, b) => a - b);
+  if (!reps.length) { container.innerHTML = '<div class="pr-empty">No personal records yet</div>'; return; }
+  container.innerHTML = `
+    <div class="pr-grid-label">PERSONAL RECORDS</div>
+    <div class="pr-grid-rows">
+      ${reps.map(r => `
+        <div class="pr-grid-row">
+          <span class="pr-reps">${r} rep${r !== 1 ? 's' : ''}</span>
+          <span class="pr-weight">${grid[r].weight} ${S.settings.trainingWeightUnit}</span>
+          <span class="pr-date">${fmtDateShort(grid[r].date)}</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+function setGraphMode(mode) {
+  _graphMode = mode;
+  renderExerciseGraph();
+}
+
+// ── EXERCISE PICKER ────────────────────────────────────────────────
+let activeSplitFilter = null;
+
+function initExercisePicker() {
+  const chips = $('muscle-chips');
+  if (!chips) return;
+  const allChip = document.createElement('button');
+  allChip.className = 'muscle-chip active';
+  allChip.textContent = 'ALL';
+  allChip.onclick = () => { activeSplitFilter = null; setActiveChip(allChip); renderExercisePickerForGroup('ALL'); };
+  chips.appendChild(allChip);
+  Object.keys(EXERCISES).forEach(group => {
+    const chip = document.createElement('button');
+    chip.className = 'muscle-chip';
+    chip.textContent = group.length > 10 ? group.slice(0, 10) : group;
+    chip.title = group;
+    chip.onclick = () => { activeSplitFilter = group; setActiveChip(chip); renderExercisePickerForGroup(group); };
+    chips.appendChild(chip);
+  });
+}
+
+function setActiveChip(active) {
+  document.querySelectorAll('.muscle-chip').forEach(c => c.classList.remove('active'));
+  active.classList.add('active');
 }
 
 function renderExercisePickerForGroup(group) {
@@ -1604,75 +2060,92 @@ function renderExercisePickerForGroup(group) {
   if (!list) return;
   const searchVal = $('exercise-search')?.value?.toLowerCase() || '';
 
-  // Personal history first (exercises logged before, sorted by recency)
   const historyNames = [];
-  const historySet = new Set();
-  Object.entries(S.training).sort((a,b) => b[0] < a[0] ? -1 : 1).forEach(([, sess]) => {
+  const historySet   = new Set();
+  Object.entries(S.training).sort((a, b) => b[0] < a[0] ? -1 : 1).forEach(([, sess]) => {
     sess.exercises.forEach(ex => {
+      if (ex.oneOff) return;
       if (!historySet.has(ex.name)) { historySet.add(ex.name); historyNames.push(ex.name); }
     });
   });
 
   let pool;
   if (searchVal.length >= 1) {
-    // Search full DB when typing
     pool = allExercises().filter(e => e.toLowerCase().includes(searchVal));
-    // Boost history matches to top
-    pool.sort((a,b) => {
+    pool.sort((a, b) => {
       const aH = historySet.has(a), bH = historySet.has(b);
-      if (aH && !bH) return -1;
-      if (!aH && bH) return 1;
-      return 0;
+      if (aH && !bH) return -1; if (!aH && bH) return 1; return 0;
     });
   } else if (group && group !== 'ALL') {
     pool = EXERCISES[group] || [];
   } else {
-    // Default: show personal history first, then nothing else until they type
     pool = historyNames.slice(0, 20);
   }
 
   if (!pool.length && searchVal.length >= 1) {
-    list.innerHTML = '<div class="picker-empty">No exercises found for "' + esc(searchVal) + '"</div>';
+    list.innerHTML = '<div class="picker-empty">No results for "' + esc(searchVal) + '"</div>' +
+      '<div class="picker-row picker-onetime" onclick="addOneOffExercise(\'' + searchVal.replace(/'/g, "\\'") + '\')">' +
+      '<span class="picker-name">+ Add <strong>' + esc(searchVal) + '</strong> as one-off</span>' +
+      '<span class="picker-onetime-badge">ONE-OFF</span></div>';
     return;
   }
 
   list.innerHTML = pool.map(name => {
     const isHistory = historySet.has(name);
-    return '<div class="picker-row' + (isHistory ? ' picker-history' : '') + '" onclick="addExerciseToSession(\'' + name.replace(/'/g,"\\'") + '\')">' +
+    return '<div class="picker-row' + (isHistory ? ' picker-history' : '') + '" onclick="addExerciseToSession(\'' + name.replace(/'/g, "\\'") + '\')">' +
       '<span class="picker-name">' + esc(name) + '</span>' +
-      (isHistory ? '<span class="picker-hist-badge">Recent</span>' : '') +
-      '</div>';
+      (isHistory ? '<span class="picker-hist-badge">Recent</span>' : '') + '</div>';
   }).join('');
+
+  if (searchVal.length >= 1 && !pool.some(n => n.toLowerCase() === searchVal.toLowerCase())) {
+    list.innerHTML += '<div class="picker-row picker-onetime" onclick="addOneOffExercise(\'' + searchVal.replace(/'/g, "\\'") + '\')">' +
+      '<span class="picker-name">+ Add <strong>' + esc(searchVal) + '</strong> as one-off</span>' +
+      '<span class="picker-onetime-badge">ONE-OFF</span></div>';
+  }
 }
 
+function handleExerciseSearch(val) {
+  const results = $('ex-search-results');
+  if (!results) return;
+  renderExercisePickerForGroup(activeSplitFilter || 'ALL');
+  results.classList.add('open');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ex-search-wrap')) {
+    $('ex-search-results')?.classList.remove('open');
+  }
+});
+
+// ── COPY LAST SESSION ─────────────────────────────────────────────
 function updateCopySessionBtn() {
   const btn = $('copy-session-btn');
   if (!btn) return;
-  // Find last training session before currentTrainingDate
   const pastDates = Object.keys(S.training).filter(d => d < currentTrainingDate).sort().reverse();
   btn.style.display = pastDates.length ? '' : 'none';
   btn.dataset.lastDate = pastDates[0] || '';
 }
 
 function copyLastSession() {
-  const btn = $('copy-session-btn');
+  const btn      = $('copy-session-btn');
   const lastDate = btn?.dataset.lastDate;
   if (!lastDate || !S.training[lastDate]) return;
-  const src = S.training[lastDate];
+  const src  = S.training[lastDate];
   const sess = getSession(currentTrainingDate);
-  // Deep copy exercises with ghost sets (clear done/weight as ghost)
   sess.exercises = src.exercises.map(ex => ({
-    name: ex.name,
-    notes: ex.notes || '',
-    sets: ex.sets.map(s => ({ weight: null, reps: null, rir: null, done: false, _ghost: { weight: s.weight, reps: s.reps, rir: s.rir } })),
+    ...freshExerciseEntry(ex.name, { type: ex.type, notes: ex.notes || '' }),
+    sets: ex.sets.map(() => freshSet()),
   }));
-  sess.notes = src.notes || '';
   const day = getDay(currentTrainingDate);
   day.trained = true;
   save();
+  _activeExIdx = null;
   renderTraining();
   SFX.save();
 }
+
+function renderSessionVolume() { /* kept for compat — footer handles this now */ }
+
 
 // ================================================================
 // 22. NUTRITION RENDER

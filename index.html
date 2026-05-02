@@ -946,6 +946,234 @@ canvas.chart-canvas{width:100%;display:block;}
 .picker-empty{padding:20px;font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);text-align:center;}
 .picker-name{flex:1;}
 
+
+/* ============================================================
+   TRAINING — FITNOTES REBUILD
+   ============================================================ */
+
+/* Routine pill bar */
+.routine-bar{
+  display:flex;gap:6px;padding:8px 16px;overflow-x:auto;flex-shrink:0;
+}
+.routine-bar::-webkit-scrollbar{display:none;}
+.routine-pill{
+  display:flex;align-items:center;gap:6px;
+  min-height:36px;padding:0 12px;flex-shrink:0;
+  background:var(--bg-raised);border:1px solid var(--border);
+  border-radius:20px;color:var(--text-secondary);
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.routine-pill.active{
+  background:var(--accent-dim);border-color:var(--accent);color:var(--accent);
+}
+.rp-name{max-width:100px;overflow:hidden;text-overflow:ellipsis;}
+.rp-sets{
+  background:var(--accent);color:#000;border-radius:8px;
+  font-size:9px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center;
+}
+
+/* Exercise drawer (list view) */
+.ex-drawer-row{
+  display:flex;align-items:center;justify-content:space-between;
+  min-height:60px;padding:12px 16px;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .13s;
+}
+.ex-drawer-row:active{background:var(--accent-dim);}
+.ex-drawer-left{flex:1;min-width:0;}
+.ex-drawer-name{
+  font-family:var(--font-ui);font-size:17px;font-weight:600;
+  color:var(--text-primary);margin-bottom:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.ex-drawer-meta{font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);}
+.ex-drawer-right{flex-shrink:0;padding-left:12px;}
+.ex-drawer-del{
+  background:none;border:none;color:var(--text-muted);
+  font-size:20px;cursor:pointer;padding:6px 8px;
+  min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;
+}
+.ex-drawer-del:active{color:#ef4444;}
+
+/* Entry panel — FitNotes-style sticky top */
+.entry-panel{
+  background:var(--bg-surface);
+  border-bottom:1px solid var(--border);
+  padding:12px 16px 16px;
+  position:sticky;top:0;z-index:20;
+}
+.ep-header{
+  display:flex;align-items:center;gap:10px;margin-bottom:12px;
+}
+.ep-back{
+  background:none;border:none;color:var(--accent);
+  font-family:var(--font-mono);font-size:13px;cursor:pointer;
+  padding:6px 0;white-space:nowrap;flex-shrink:0;
+}
+.ep-name{
+  flex:1;font-family:var(--font-display);font-size:15px;font-weight:700;
+  color:var(--gold-bright);letter-spacing:.1em;text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.ep-graph-btn{
+  background:none;border:none;font-size:18px;cursor:pointer;
+  padding:4px 6px;flex-shrink:0;opacity:.7;
+}
+.ep-graph-btn:active{opacity:1;}
+
+.ep-field-block{margin-bottom:10px;}
+.ep-field-label{
+  font-family:var(--font-mono);font-size:10px;color:var(--text-secondary);
+  letter-spacing:.14em;text-transform:uppercase;margin-bottom:5px;
+}
+.ep-stepper-row{display:flex;align-items:center;gap:0;}
+.ep-step{
+  width:52px;height:52px;border-radius:var(--radius-sm);
+  background:var(--bg-raised);border:1px solid var(--border);
+  color:var(--text-primary);font-size:24px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .13s;flex-shrink:0;
+}
+.ep-step:active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+.ep-field-input{
+  flex:1;height:52px;text-align:center;
+  background:var(--bg-input);border:1px solid var(--border);
+  border-left:none;border-right:none;
+  color:#ffffff;font-family:var(--font-mono);font-size:28px;font-weight:700;
+  outline:none;-webkit-appearance:none;
+}
+.ep-field-input:focus{border-color:var(--accent);background:var(--bg-raised);}
+
+.ep-btn-row{display:flex;gap:8px;margin-top:12px;}
+.ep-save{
+  flex:2;min-height:52px;border-radius:var(--radius);
+  background:var(--accent-dim);border:1px solid var(--accent);
+  color:var(--accent);font-family:var(--font-display);font-size:15px;
+  font-weight:700;letter-spacing:.12em;cursor:pointer;transition:all .15s;
+}
+.ep-save:active{background:var(--accent);color:#000;}
+.ep-clear{
+  flex:1;min-height:52px;border-radius:var(--radius);
+  background:none;border:1px solid var(--border);
+  color:var(--text-secondary);font-family:var(--font-mono);font-size:13px;
+  cursor:pointer;transition:all .15s;letter-spacing:.06em;
+}
+.ep-clear:active{border-color:#ef4444;color:#ef4444;}
+.ep-hint{
+  font-family:var(--font-mono);font-size:10px;color:var(--text-secondary);
+  letter-spacing:.04em;margin-top:8px;line-height:1.5;min-height:14px;
+}
+
+/* Set log list */
+.set-log-list{padding:0 0 8px;}
+.set-log-header{
+  display:grid;padding:6px 16px;
+  background:var(--bg-raised);border-bottom:1px solid var(--border);
+  font-family:var(--font-mono);font-size:10px;color:var(--text-secondary);
+  letter-spacing:.1em;text-transform:uppercase;
+}
+.set-log-header,.set-log-row{
+  grid-template-columns: 32px 1fr 1fr 1fr 36px;
+  align-items:center;
+}
+.set-log-row{
+  display:grid;padding:0 16px;min-height:52px;
+  border-bottom:1px solid rgba(255,255,255,.04);
+  cursor:pointer;transition:background .12s;
+  font-family:var(--font-mono);font-size:15px;color:var(--text-secondary);
+}
+.set-log-row.done{color:var(--text-primary);}
+.set-log-row.editing{background:var(--gold-dim);border-left:3px solid var(--gold-bright);}
+.set-log-row:active{background:var(--accent-dim);}
+.slr-num{font-size:12px;color:var(--text-muted);}
+.set-log-row.done .slr-num{color:var(--gold-bright);}
+.slr-weight,.slr-reps{font-weight:700;color:inherit;}
+.slr-prev{font-size:11px;color:var(--text-muted);}
+.slr-done{text-align:center;font-size:14px;color:var(--text-muted);}
+.set-log-row.done .slr-done{color:var(--accent);}
+.slh-num,.slh-weight,.slh-reps,.slh-prev,.slh-done{display:contents;}
+
+/* PR star on set number */
+.set-log-row.done .slr-num:has(✓){}
+
+/* Last session history ghost */
+.set-log-history{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:8px 16px;border-top:1px solid var(--border);
+  background:var(--bg-raised);
+}
+.slh-label{
+  font-family:var(--font-mono);font-size:9px;color:var(--text-muted);
+  letter-spacing:.1em;text-transform:uppercase;flex-shrink:0;
+}
+.slh-set{
+  font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:6px;padding:3px 8px;
+}
+
+/* Session footer */
+.session-footer{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;margin:0 16px 16px;
+  background:var(--bg-raised);border:1px solid var(--border);
+  border-radius:var(--radius);
+}
+.sf-vol{display:flex;align-items:baseline;gap:5px;flex:1;}
+.sf-val{font-family:var(--font-mono);font-size:20px;font-weight:700;color:var(--gold-bright);}
+.sf-unit{font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);}
+.sf-sets{font-family:var(--font-mono);font-size:11px;color:var(--accent);white-space:nowrap;}
+
+/* Graph modal */
+.graph-modal-header{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;
+}
+.graph-modal-title{
+  font-family:var(--font-display);font-size:16px;font-weight:700;
+  color:var(--gold-bright);letter-spacing:.12em;flex:1;
+}
+.graph-mode-tabs{display:flex;gap:6px;margin-bottom:12px;}
+.graph-mode-btn{
+  flex:1;min-height:36px;border-radius:var(--radius-sm);
+  background:var(--bg-raised);border:1px solid var(--border);
+  color:var(--text-secondary);font-family:var(--font-mono);font-size:11px;
+  cursor:pointer;transition:all .15s;letter-spacing:.06em;
+}
+.graph-mode-btn.active{
+  background:var(--accent-dim);border-color:var(--accent);color:var(--accent);
+}
+.graph-canvas-wrap{position:relative;width:100%;height:180px;margin-bottom:16px;}
+.graph-canvas{width:100%;height:100%;display:block;}
+.graph-empty{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:13px;color:var(--text-muted);
+}
+
+/* PR grid */
+.pr-grid{margin-top:4px;}
+.pr-grid-label{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:.16em;
+  color:var(--gold);text-transform:uppercase;margin-bottom:8px;
+}
+.pr-grid-rows{display:flex;flex-direction:column;gap:4px;}
+.pr-grid-row{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 12px;background:var(--bg-raised);border-radius:var(--radius-sm);
+  border:1px solid var(--border);
+}
+.pr-reps{font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);width:60px;flex-shrink:0;}
+.pr-weight{font-family:var(--font-mono);font-size:15px;font-weight:700;color:var(--gold-bright);flex:1;}
+.pr-date{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);}
+.pr-empty{font-family:var(--font-mono);font-size:12px;color:var(--text-muted);padding:12px 0;text-align:center;}
+
+/* Picker badges */
+.picker-onetime{border-left:3px solid var(--gold);}
+.picker-onetime-badge{
+  font-family:var(--font-mono);font-size:10px;color:var(--gold-bright);
+  background:var(--gold-dim);padding:2px 8px;border-radius:8px;flex-shrink:0;
+}
+
 /* ── CAFFEINE TRACKER ── */
 #caffeine-tracker{padding:0 16px 12px;}
 .caff-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;}
@@ -1174,6 +1402,7 @@ canvas.chart-canvas{width:100%;display:block;}
          ═══════════════════════════════════════════ -->
     <div id="sec-training" class="section">
 
+      <!-- Date nav + session timer -->
       <div class="training-date-nav">
         <button class="date-nav-btn" onclick="navTraining(-1)">‹</button>
         <div style="text-align:center;">
@@ -1185,14 +1414,66 @@ canvas.chart-canvas{width:100%;display:block;}
         <button class="date-nav-btn hidden" id="training-next-date" onclick="navTraining(1)">›</button>
       </div>
 
+      <!-- Routine pill bar (active exercises) -->
+      <div id="routine-bar" class="routine-bar"></div>
+
       <!-- Training actions -->
       <div class="training-actions">
         <button class="btn-ghost" id="copy-session-btn" onclick="copyLastSession()" style="display:none;">↩ Copy Last</button>
       </div>
-      <!-- Inline exercise search -->
+
+      <!-- ── ENTRY PANEL (FitNotes-style: weight/reps steppers) ── -->
+      <div id="entry-panel" class="entry-panel" style="display:none;">
+        <div class="ep-header">
+          <button class="ep-back" id="entry-ex-back" onclick="backToExerciseList()">‹ Back</button>
+          <div class="ep-name" id="entry-ex-name"></div>
+          <button class="ep-graph-btn" onclick="openExerciseGraph($('entry-ex-name').textContent)">📈</button>
+        </div>
+
+        <!-- Weight field -->
+        <div id="entry-weight-block" class="ep-field-block">
+          <div class="ep-field-label">WEIGHT</div>
+          <div class="ep-stepper-row">
+            <button class="ep-step" onclick="stepField('entry-weight',-1)">−</button>
+            <input id="entry-weight" class="ep-field-input" type="number" step="2.5" min="0"
+              placeholder="0" inputmode="decimal"
+              oninput="_onEntryInput()" />
+            <button class="ep-step" onclick="stepField('entry-weight',1)">+</button>
+          </div>
+        </div>
+
+        <!-- Reps field -->
+        <div class="ep-field-block">
+          <div class="ep-field-label">REPS</div>
+          <div class="ep-stepper-row">
+            <button class="ep-step" onclick="stepField('entry-reps',-1)">−</button>
+            <input id="entry-reps" class="ep-field-input" type="number" step="1" min="0"
+              placeholder="0" inputmode="numeric"
+              oninput="_onEntryInput()" />
+            <button class="ep-step" onclick="stepField('entry-reps',1)">+</button>
+          </div>
+        </div>
+
+        <!-- Save / Clear buttons -->
+        <div class="ep-btn-row">
+          <button class="ep-save" id="entry-save-btn" onclick="saveSet()">SAVE SET</button>
+          <button class="ep-clear" id="entry-clear-btn" onclick="clearEntry()">CLEAR</button>
+        </div>
+
+        <!-- PB + last session hint -->
+        <div class="ep-hint" id="entry-hint"></div>
+      </div>
+
+      <!-- ── SET LOG LIST ── -->
+      <div id="set-log-list" class="set-log-list"></div>
+
+      <!-- ── EXERCISE LIST (when no exercise selected) ── -->
+      <div id="exercise-list" class="exercise-list"></div>
+
+      <!-- ── INLINE EXERCISE SEARCH ── -->
       <div class="ex-search-wrap">
-        <input id="exercise-search" class="ex-search-input" type="text" 
-          placeholder="Search exercises or type to add..."
+        <input id="exercise-search" class="ex-search-input" type="text"
+          placeholder="Search or add exercise..."
           autocomplete="off" autocorrect="off" spellcheck="false"
           oninput="handleExerciseSearch(this.value)"
           onfocus="$('ex-search-results').classList.add('open');renderExercisePickerForGroup(activeSplitFilter||'ALL')"
@@ -1200,8 +1481,8 @@ canvas.chart-canvas{width:100%;display:block;}
         <div id="ex-search-results" class="ex-search-results"></div>
       </div>
 
-      <!-- Exercise list -->
-      <div id="exercise-list" class="exercise-list"></div>
+      <!-- Session volume footer -->
+      <div id="session-footer" class="session-footer" style="display:none;"></div>
 
     </div><!-- /sec-training -->
 
@@ -2008,5 +2289,31 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script>
+
+  <!-- ═══════════════════════════════════════════
+       EXERCISE PROGRESS GRAPH MODAL
+       ═══════════════════════════════════════════ -->
+  <div id="modal-exercise-graph" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-grip"></div>
+      <div class="graph-modal-header">
+        <div class="graph-modal-title" id="graph-ex-name"></div>
+        <button class="btn-icon" onclick="closeModal('modal-exercise-graph')">×</button>
+      </div>
+      <!-- Mode tabs -->
+      <div class="graph-mode-tabs">
+        <button class="graph-mode-btn active" data-mode="maxWeight" onclick="setGraphMode('maxWeight')">Max Weight</button>
+        <button class="graph-mode-btn" data-mode="e1RM"      onclick="setGraphMode('e1RM')">e1RM</button>
+        <button class="graph-mode-btn" data-mode="volume"    onclick="setGraphMode('volume')">Volume</button>
+      </div>
+      <div class="graph-canvas-wrap">
+        <canvas id="graph-canvas" class="graph-canvas"></canvas>
+        <div id="graph-empty" class="graph-empty" style="display:none;">Not enough data yet</div>
+      </div>
+      <!-- PR grid -->
+      <div id="pr-grid" class="pr-grid"></div>
+    </div>
+  </div>
+
 </body>
 </html>
