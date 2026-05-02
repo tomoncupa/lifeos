@@ -157,7 +157,7 @@ const DEFAULTS = {
   karmaEnabled: false,
   onboardingDone: false,
   supabaseUrl: 'https://ubzixngayizcycmfxmmj.supabase.co',
-  supabaseKey: '',
+  supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVieml4bmdheWl6Y3ljbWZ4bW1qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDE4NTIsImV4cCI6MjA5Mjg3Nzg1Mn0.gZSb3pzB3WBic0i6xOG_Nu82mxVQa9RkgkKjfB0XBFE',
   weightGoal: null,
   weightDeadline: null,
   weightPace: 1.0,
